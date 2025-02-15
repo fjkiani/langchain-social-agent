@@ -1,0 +1,18 @@
+{
+  "node_version": "20",
+  "graphs": {
+    "ingest_data": "./src/agents/ingest-data/ingest-data-graph.ts:graph",
+    "generate_post": "./src/agents/generate-post/generate-post-graph.ts:generatePostGraph",
+    "upload_post": "./src/agents/upload-post/index.ts:uploadPostGraph",
+    "reflection": "./src/agents/reflection/index.ts:reflectionGraph",
+    "generate_thread": "./src/agents/generate-thread/index.ts:generateThreadGraph",
+    "curate_data": "./src/agents/curate-data/index.ts:curateDataGraph",
+    "verify_reddit_post": "./src/agents/verify-reddit-post/verify-reddit-post-graph.ts:verifyRedditPostGraph",
+    "verify_tweet": "./src/agents/verify-tweet/verify-tweet-graph.ts:verifyTweetGraph",
+    "supervisor": "./src/agents/supervisor/supervisor-graph.ts:supervisorGraph",
+    "generate_report": "./src/agents/generate-report/index.ts:generateReportGraph"
+  },
+  "env": ".env",
+  "dependencies": ["."],
+  "dockerfile_lines": ["RUN npx -y playwright@1.49.1 install --with-deps"]
+}
