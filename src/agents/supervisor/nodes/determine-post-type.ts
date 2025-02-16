@@ -1,3 +1,4 @@
+import { createLLMAdapter } from "../../../config/llm-adapter.js";
 import { ChatAnthropic } from "@langchain/anthropic";
 import { SupervisorState } from "../supervisor-state.js";
 import { z } from "zod";
@@ -66,12 +67,10 @@ Please take your time, and identify the best type of post to generate for these 
 export async function determinePostType(
   state: SupervisorState,
 ): Promise<Partial<SupervisorState>> {
-  const model = new ChatAnthropic({
-    model: "claude-3-5-sonnet-latest",
-    temperature: 0,
-  }).withStructuredOutput(postTypeSchema, {
-    name: "postType",
-  });
+  const model = createLLMAdapter()
+    .withStructuredOutput(postTypeSchema, {
+      name: "postType",
+    });
 
   const reportAndPostType: {
     reports: string[];
@@ -82,13 +81,21 @@ export async function determinePostType(
 
   for await (const report of state.groupedReports) {
     const result = await model.invoke([
-      ["system", DETERMINE_POST_TYPE_PROMPT],
-      ["user", formatReportUserPrompt(report)],
+      {
+        role: "system",
+        content: DETERMINE_POST_TYPE_PROMPT,
+      },
+      {
+        role: "user",
+        content: formatReportUserPrompt(report),
+      },
     ]);
 
     reportAndPostType.push({
-      ...result,
-      ...report,
+      reports: report.reports,
+      keyDetails: report.keyDetails,
+      reason: result.parsed?.reason ?? "",
+      type: result.parsed?.type ?? "post",
     });
   }
 

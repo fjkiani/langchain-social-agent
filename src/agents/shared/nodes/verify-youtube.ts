@@ -2,7 +2,7 @@ import { z } from "zod";
 import { LangGraphRunnableConfig } from "@langchain/langgraph";
 import { GeneratePostAnnotation } from "../../generate-post/generate-post-state.js";
 import { ChatVertexAI } from "@langchain/google-vertexai-web";
-import { ChatAnthropic } from "@langchain/anthropic";
+// import { ChatAnthropic } from "@langchain/anthropic";
 import { HumanMessage } from "@langchain/core/messages";
 import { getPrompts } from "../../generate-post/prompts/index.js";
 import { VerifyContentAnnotation } from "../shared-state.js";
@@ -10,6 +10,7 @@ import {
   getVideoThumbnailUrl,
   getYouTubeVideoDuration,
 } from "./youtube.utils.js";
+import { createLLMAdapter } from "../../../config/llm-adapter.js";
 
 type VerifyYouTubeContentReturn = {
   relevantLinks: (typeof GeneratePostAnnotation.State)["relevantLinks"];
@@ -89,16 +90,14 @@ export async function generateVideoSummary(url: string): Promise<string> {
 }
 
 export async function verifyYouTubeContentIsRelevant(
-  summary: string,
+  content: string,
 ): Promise<boolean> {
-  const relevancyModel = new ChatAnthropic({
-    model: "claude-3-5-sonnet-latest",
-    temperature: 0,
-  }).withStructuredOutput(RELEVANCY_SCHEMA, {
-    name: "relevancy",
-  });
+  const relevancyModel = createLLMAdapter()
+    .withStructuredOutput(RELEVANCY_SCHEMA, {
+      name: "relevancy",
+    });
 
-  const { relevant } = await relevancyModel
+  const response = await relevancyModel
     .withConfig({
       runName: "check-video-relevancy-model",
     })
@@ -109,10 +108,11 @@ export async function verifyYouTubeContentIsRelevant(
       },
       {
         role: "user",
-        content: summary,
+        content: content,
       },
     ]);
-  return relevant;
+
+  return response.parsed?.relevant ?? false;
 }
 
 /**

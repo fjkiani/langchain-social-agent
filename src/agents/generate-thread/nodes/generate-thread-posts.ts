@@ -1,4 +1,4 @@
-import { ChatAnthropic } from "@langchain/anthropic";
+import { createLLMAdapter } from "../../../config/llm-adapter.js";
 import {
   formatAllPostsForPrompt,
   formatBodyPostsForPrompt,
@@ -145,17 +145,17 @@ Once you've completed these steps, provide your tweet inside <tweet> tags. Do no
 export async function generateThreadPosts(
   state: GenerateThreadState,
 ): Promise<Partial<GenerateThreadState>> {
-  const model = new ChatAnthropic({
-    model: "claude-3-5-sonnet-latest",
-    temperature: 0, // TODO: Eval different temperatures
-  });
+  const model = createLLMAdapter();
 
   const formattedFirstPostPrompt = FIRST_POST_PROMPT.replace(
     "{THREAD_PLAN}",
     state.threadPlan,
   ).replace("{MARKETING_REPORTS}", formatReportsForPrompt(state.reports));
   const firstPostGeneration = await model.invoke([
-    ["user", formattedFirstPostPrompt],
+    {
+      role: "user",
+      content: formattedFirstPostPrompt,
+    },
   ]);
   const firstPost = parseTweetGeneration(firstPostGeneration.content as string);
 
@@ -172,11 +172,12 @@ export async function generateThreadPosts(
       .replace("{BODY_POSTS}", formatBodyPostsForPrompt(bodyPosts))
       .replace("{THREAD_PLAN}", state.threadPlan);
 
-    const bodyPost = (
-      await model.invoke([["user", formattedFollowingPostPrompt]])
-    ).content as string;
+    const bodyPost = await model.invoke([{
+      role: "user",
+      content: formattedFollowingPostPrompt
+    }]);
 
-    bodyPosts.push(parseTweetGeneration(bodyPost));
+    bodyPosts.push(parseTweetGeneration(bodyPost.content as string));
   }
 
   const formattedFinalPostPrompt = FINAL_POST_PROMPT.replace(
@@ -187,9 +188,10 @@ export async function generateThreadPosts(
     formatAllPostsForPrompt([firstPost, ...bodyPosts]),
   );
 
-  const finalPostGeneration = await model.invoke([
-    ["user", formattedFinalPostPrompt],
-  ]);
+  const finalPostGeneration = await model.invoke([{
+    role: "user",
+    content: formattedFinalPostPrompt
+  }]);
   const finalPost = parseTweetGeneration(finalPostGeneration.content as string);
 
   const allPosts = [firstPost, ...bodyPosts, finalPost];

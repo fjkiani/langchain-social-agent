@@ -1,6 +1,5 @@
 import { LangGraphRunnableConfig } from "@langchain/langgraph";
 import { z } from "zod";
-import { ChatAnthropic } from "@langchain/anthropic";
 import { FireCrawlLoader } from "@langchain/community/document_loaders/web/firecrawl";
 import { getPrompts } from "../../generate-post/prompts/index.js";
 import { VerifyContentAnnotation } from "../shared-state.js";
@@ -8,8 +7,9 @@ import { RunnableLambda } from "@langchain/core/runnables";
 import { getPageText } from "../../utils.js";
 import { getImagesFromFireCrawlMetadata } from "../../../utils/firecrawl.js";
 import { CurateDataState } from "../../curate-data/state.js";
+import { createLLMAdapter } from "../../../config/llm-adapter.js";
 
-const RELEVANCY_SCHEMA = z
+export const RELEVANCY_SCHEMA = z
   .object({
     reasoning: z
       .string()
@@ -24,7 +24,7 @@ const RELEVANCY_SCHEMA = z
   })
   .describe("The relevancy of the content to your company's products.");
 
-const VERIFY_COMPANY_RELEVANT_CONTENT_PROMPT = `You are a highly regarded marketing employee.
+export const VERIFY_COMPANY_RELEVANT_CONTENT_PROMPT = `You are a highly regarded marketing employee.
 You're provided with a webpage containing content a third party submitted to you claiming it's relevant to your business context.
 Your task is to carefully read over the entire page, and determine whether or not the content is actually relevant to your context.
 
@@ -69,17 +69,13 @@ export async function getUrlContents(url: string): Promise<UrlContents> {
   throw new Error(`Failed to fetch content from ${url}.`);
 }
 
-export async function verifyGeneralContentIsRelevant(
-  content: string,
-): Promise<boolean> {
-  const relevancyModel = new ChatAnthropic({
-    model: "claude-3-5-sonnet-latest",
-    temperature: 0,
-  }).withStructuredOutput(RELEVANCY_SCHEMA, {
-    name: "relevancy",
-  });
+export async function verifyGeneralContentIsRelevant(content: string): Promise<boolean> {
+  const relevancyModel = createLLMAdapter()
+    .withStructuredOutput(RELEVANCY_SCHEMA, {
+      name: "relevancy",
+    });
 
-  const { relevant } = await relevancyModel
+  const response = await relevancyModel
     .withConfig({
       runName: "check-general-relevancy-model",
     })
@@ -93,7 +89,8 @@ export async function verifyGeneralContentIsRelevant(
         content: content,
       },
     ]);
-  return relevant;
+
+  return response.parsed?.relevant ?? false;
 }
 
 /**

@@ -23,7 +23,7 @@
     "test:all": "yarn test && yarn test:int && yarn lint:langgraph",
     "start": "yarn start:auth",
     "start:auth": "yarn tsx src/clients/auth-server.ts",
-    "generate-post": "yarn ts-node --esm scripts/generate-post.ts",
+    "generate-post": "NODE_OPTIONS='--loader ts-node/esm' ts-node --esm scripts/generate-post.ts",
     "cron:create": "yarn tsx scripts/crons/create-cron.ts",
     "cron:delete": "yarn tsx scripts/crons/delete-cron.ts",
     "cron:list": "yarn tsx scripts/crons/list-crons.ts",
@@ -36,15 +36,16 @@
   },
   "dependencies": {
     "@arcadeai/arcadejs": "^1.0.0",
+    "@google/generative-ai": "^0.21.0",
     "@googleapis/youtube": "^20.0.0",
     "@langchain/anthropic": "^0.3.9",
     "@langchain/community": "^0.3.22",
     "@langchain/core": "^0.3.34",
     "@langchain/google-vertexai-web": "^0.1.2",
     "@langchain/langgraph": "^0.2.46",
+    "@langchain/langgraph-api": "^0.0.10",
     "@langchain/langgraph-cli": "0.0.9",
     "@langchain/langgraph-sdk": "^0.0.36",
-    "@langchain/langgraph-api": "^0.0.10",
     "@langchain/openai": "^0.3.17",
     "@mendable/firecrawl-js": "^1.10.1",
     "@octokit/rest": "^21.0.2",
@@ -94,9 +95,9 @@
     "prettier": "^3.3.3",
     "timezone-mock": "^1.3.6",
     "ts-jest": "^29.1.0",
+    "ts-node": "^10.9.2",
     "tsx": "^4.19.2",
-    "typescript": "^5.3.3",
-    "ts-node": "^10.9.2"
+    "typescript": "^5.3.3"
   },
   "engines": {
     "node": ">=18.0.0"

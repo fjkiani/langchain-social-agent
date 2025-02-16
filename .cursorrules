@@ -92,6 +92,80 @@ If needed, you can further use the `web_scraper.py` file to scrape the web page 
 - Read the file before you try to edit it.
 - Due to Cursor's limit, when you use `git` and `gh` and need to submit a multiline commit message, first write the message in a file, and then use `git commit -F <filename>` or similar command to commit. And then remove the file. Include "[Cursor] " in the commit message and PR title.
 
+## LLM Integration Lessons
+- Gemini Pro doesn't support `withStructuredOutput` like Claude/Anthropic - need different approach for structured output
+- Keep existing Claude implementation while testing Gemini integration to ensure smooth transition
+- Need to modify prompts to work with Gemini's response format
+- Consider creating wrapper/adapter for consistent API across different LLM providers
+
+## Current Task: Gemini Integration
+
+### Progress
+[X] Initial setup
+  - Added @google/generative-ai package
+  - Created LLM config file
+
+[✓] Attempted changes:
+  - verify-general.ts: Updated to use new response format ✓
+  - verify-github.ts: Needs update for LLMResponse
+  - verify-youtube.ts: Needs update for LLMResponse
+  - validate-bulk-tweets.ts: Updated to use new response format ✓
+
+[!] Files to Update (HIGH PRIORITY):
+  1. Response Format Updates Needed:
+     - src/agents/shared/nodes/verify-github.ts
+       - Change { relevant } = await to response.parsed?.relevant
+     - src/agents/shared/nodes/verify-youtube.ts
+       - Change { relevant } = await to response.parsed?.relevant
+     - src/agents/supervisor/nodes/determine-post-type.ts
+       - Fix type mismatch in reportAndPostType.push()
+     - src/agents/shared/nodes/update-scheduled-date.ts
+       - Change result.scheduleDate to result.parsed?.scheduleDate
+     - src/agents/generate-thread/nodes/rewrite-thread.ts
+       - Change revisedThreadResponse.threadPosts to revisedThreadResponse.parsed?.threadPosts
+     - src/agents/verify-reddit-post/nodes/validate-reddit-post.ts
+       - Change result.relevant to result.parsed?.relevant
+     - src/agents/verify-tweet/nodes/validate-tweet.ts
+       - Change { relevant } = await to response.parsed?.relevant
+     - src/agents/generate-thread/nodes/generate-thread-posts.ts
+       - Fix message format from [["user", msg]] to [{role: "user", content: msg}]
+
+  2. Type Updates Needed:
+     - src/config/llm-adapter.ts
+       - Fix ChatAnthropic type issues in withStructuredOutput and withConfig
+     - src/config/llm-adapter.test.ts
+       - Update test assertions to use response.parsed
+
+### Next Steps
+[X] Create LLM adapter/wrapper for consistent API
+[!] Fix Response Format Issues:
+  1. [✓] Create proper LLMResponse interface
+  2. [✓] Update verify-general.ts as example
+  3. [✓] Update validate-bulk-tweets.ts as example
+  4. [ ] Update remaining files following the pattern
+  5. [ ] Add null coalescing for safety
+
+[ ] Testing:
+  1. [ ] Add unit tests for adapter
+  2. [ ] Test response parsing
+  3. [ ] Test error handling
+  4. [ ] Integration tests with both providers
+
+### Technical Notes
+1. Response Format Pattern:
+   - Always use response.parsed for structured data
+   - Add null coalescing (e.g., response.parsed?.relevant ?? false)
+   - Keep raw response in response.content
+
+2. Message Format:
+   - Old: [["user", message]]
+   - New: [{ role: "user", content: message }]
+
+3. Type Safety:
+   - Use LLMResponse<T> for all responses
+   - Add proper error handling for missing parsed data
+   - Use type guards where needed
+
 ## Cursor learned
 
 - For search results, ensure proper handling of different character encodings (UTF-8) for international queries

@@ -1,16 +1,14 @@
 import { z } from "zod";
-import { LangGraphRunnableConfig } from "@langchain/langgraph";
-import { ChatAnthropic } from "@langchain/anthropic";
 import { getPrompts } from "../../generate-post/prompts/index.js";
 import { VerifyContentAnnotation } from "../shared-state.js";
 import { GeneratePostAnnotation } from "../../generate-post/generate-post-state.js";
-import { RunnableConfig } from "@langchain/core/runnables";
 import {
   getRepoContents,
   getFileContents,
   getOwnerRepoFromUrl,
 } from "../../../utils/github-repo-contents.js";
 import { Octokit } from "@octokit/rest";
+import { createLLMAdapter } from "../../../config/llm-adapter.js";
 
 function getOctokit() {
   const token = process.env.GITHUB_TOKEN;
@@ -134,21 +132,17 @@ interface VerifyGitHubContentParams {
   dependencyFiles:
     | Array<{ fileContents: string; fileName: string }>
     | undefined;
-  config: LangGraphRunnableConfig;
 }
 
 export async function verifyGitHubContentIsRelevant({
   contents,
   fileType,
   dependencyFiles,
-  config,
 }: VerifyGitHubContentParams): Promise<boolean> {
-  const relevancyModel = new ChatAnthropic({
-    model: "claude-3-5-sonnet-latest",
-    temperature: 0,
-  }).withStructuredOutput(RELEVANCY_SCHEMA, {
-    name: "relevancy",
-  });
+  const relevancyModel = createLLMAdapter()
+    .withStructuredOutput(RELEVANCY_SCHEMA, {
+      name: "relevancy",
+    });
 
   let dependenciesPrompt = "";
   if (dependencyFiles) {
@@ -163,26 +157,25 @@ export async function verifyGitHubContentIsRelevant({
     );
   }
 
-  const { relevant } = await relevancyModel
+  const response = await relevancyModel
     .withConfig({
       runName: "check-github-relevancy-model",
     })
-    .invoke(
-      [
-        {
-          role: "system",
-          content: VERIFY_LANGCHAIN_RELEVANT_CONTENT_PROMPT.replaceAll(
-            "{file_type}",
-            fileType,
-          ).replaceAll("{repoDependenciesPrompt}", dependenciesPrompt),
-        },
-        {
-          role: "user",
-          content: contents,
-        },
-      ],
-      config as RunnableConfig,
-    );
+    .invoke([
+      {
+        role: "system",
+        content: VERIFY_LANGCHAIN_RELEVANT_CONTENT_PROMPT.replaceAll(
+          "{file_type}",
+          fileType,
+        ).replaceAll("{repoDependenciesPrompt}", dependenciesPrompt),
+      },
+      {
+        role: "user",
+        content: contents,
+      },
+    ]);
+
+  const relevant = response.parsed?.relevant ?? false;
   return relevant;
 }
 
@@ -191,7 +184,6 @@ export async function verifyGitHubContentIsRelevant({
  */
 export async function verifyGitHubContent(
   state: typeof VerifyContentAnnotation.State,
-  config: LangGraphRunnableConfig,
 ): Promise<VerifyGitHubContentReturn> {
   const contentsAndType = await getGitHubContentsAndTypeFromUrl(state.link);
   if (!contentsAndType) {
@@ -207,7 +199,6 @@ export async function verifyGitHubContent(
     contents: contentsAndType.contents,
     fileType: contentsAndType.fileType,
     dependencyFiles,
-    config,
   });
   if (relevant) {
     return {

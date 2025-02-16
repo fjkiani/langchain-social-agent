@@ -1,4 +1,4 @@
-import { ChatAnthropic } from "@langchain/anthropic";
+import { createLLMAdapter } from "../../../config/llm-adapter.js";
 import { z } from "zod";
 
 const ROUTE_RESPONSE_PROMPT = `You are an AI assistant tasked with routing a user's response to one of two possible routes based on their intention. The two possible routes are:
@@ -74,10 +74,7 @@ export async function routeResponse({
   dateOrPriority,
   userResponse,
 }: RouteResponseArgs) {
-  const model = new ChatAnthropic({
-    model: "claude-3-5-sonnet-latest",
-    temperature: 0,
-  });
+  const model = createLLMAdapter();
 
   const routeSchema = z.object({
     route: z.enum(["rewrite_post", "update_date", "unknown_response"]),

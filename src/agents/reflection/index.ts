@@ -84,7 +84,7 @@ async function reflection(
       threads,
     },
     config: {
-      configurable: { model: "claude-3-5-sonnet-latest", kind: "metaprompt" },
+      configurable: { model: "gemini-pro", kind: "metaprompt" },
     },
   });
 

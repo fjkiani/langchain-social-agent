@@ -1,4 +1,4 @@
-import { ChatAnthropic } from "@langchain/anthropic";
+import { createLLMAdapter } from "../../../config/llm-adapter.js";
 import { getPrompts } from "../../generate-post/prompts/index.js";
 import { VerifyRedditGraphState } from "../types.js";
 import { z } from "zod";
@@ -67,12 +67,10 @@ ${c}
 export async function validateRedditPost(
   state: VerifyRedditGraphState,
 ): Promise<Partial<VerifyRedditGraphState>> {
-  const model = new ChatAnthropic({
-    model: "claude-3-5-sonnet-latest",
-    temperature: 0,
-  }).withStructuredOutput(RELEVANCY_SCHEMA, {
-    name: "relevancy",
-  });
+  const model = createLLMAdapter()
+    .withStructuredOutput(RELEVANCY_SCHEMA, {
+      name: "relevancy",
+    });
 
   const formattedUserPrompt = formatUserPrompt(state);
 
@@ -87,7 +85,7 @@ export async function validateRedditPost(
     },
   ]);
 
-  if (result.relevant) {
+  if (result.parsed?.relevant) {
     // If true, return nothing so the state is not effected.
     return {
       relevantLinks: [...state.externalURLs],

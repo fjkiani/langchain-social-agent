@@ -1,12 +1,12 @@
-import { ChatAnthropic } from "@langchain/anthropic";
 import { CurateDataState } from "../state.js";
 import { z } from "zod";
 import { chunkArray } from "../../utils.js";
 import { TweetV2 } from "twitter-api-v2";
+import { createLLMAdapter } from "../../../config/llm-adapter.js";
 
 const EXAMPLES = `<example index="0">
     <example-tweet>
-      RT @arjunkhemani: .@naval: Looking for truth is the opposite of looking for social approval.\n\n“I’m deeply suspicious of groups of people co…
+      RT @arjunkhemani: .@naval: Looking for truth is the opposite of looking for social approval.\n\n"I'm deeply suspicious of groups of people co…
     </example-tweet>
 
     <scratchpad>
@@ -143,10 +143,8 @@ function formatTweets(tweets: TweetV2[]): string {
 export async function validateBulkTweets(
   state: CurateDataState,
 ): Promise<Partial<CurateDataState>> {
-  const model = new ChatAnthropic({
-    model: "claude-3-5-sonnet-latest",
-    temperature: 0,
-  }).withStructuredOutput(answerSchema, { name: "answer" });
+  const model = createLLMAdapter()
+    .withStructuredOutput(answerSchema, { name: "answer" });
 
   // Chunk the tweets into groups of 25
   const chunkedTweets = chunkArray(state.rawTweets, 25);
@@ -158,13 +156,18 @@ export async function validateBulkTweets(
       formatTweets(chunk),
     );
 
-    const { answer } = await model.invoke([["user", formattedPrompt]]);
+    const response = await model.invoke([
+      {
+        role: "user",
+        content: formattedPrompt,
+      }
+    ]);
 
-    const answerSet = new Set(answer);
+    const answerSet = new Set(response.parsed?.answer ?? []);
     const relevantTweets = chunk.filter((_, index) => answerSet.has(index));
-    if (relevantTweets.length !== answer.length) {
+    if (relevantTweets.length !== answerSet.size) {
       console.warn(
-        `Expected ${answer.length} relevant tweets, but found ${relevantTweets.length}`,
+        `Expected ${answerSet.size} relevant tweets, but found ${relevantTweets.length}`,
       );
     }
     allRelevantTweets.push(...relevantTweets);

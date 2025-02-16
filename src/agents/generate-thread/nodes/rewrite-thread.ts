@@ -1,12 +1,12 @@
 import { z } from "zod";
 import { GenerateThreadState } from "../state.js";
-import { ChatAnthropic } from "@langchain/anthropic";
 import {
   getThreadReflections,
   THREAD_REFLECTIONS_PROMPT,
   THREAD_RULESET_KEY,
 } from "../../../utils/reflections.js";
 import { LangGraphRunnableConfig } from "@langchain/langgraph";
+import { createLLMAdapter } from "../../../config/llm-adapter.js";
 
 const REWRITE_THREAD_PROMPT = `<context>
 You're a highly regarded marketing employee, working on crafting thoughtful and engaging content for your LinkedIn and Twitter pages.
@@ -61,12 +61,10 @@ export async function rewriteThread(
     );
   }
 
-  const rewriteThreadModel = new ChatAnthropic({
-    model: "claude-3-5-sonnet-latest",
-    temperature: 0,
-  }).withStructuredOutput(schema, {
-    name: "rewriteThreadPosts",
-  });
+  const rewriteThreadModel = createLLMAdapter()
+    .withStructuredOutput(schema, {
+      name: "rewriteThreadPosts",
+    });
 
   const threadReflections = await getThreadReflections(config);
   let threadReflectionsPrompt = "";
@@ -102,7 +100,7 @@ export async function rewriteThread(
   ]);
 
   return {
-    threadPosts: revisedThreadResponse.threadPosts,
+    threadPosts: revisedThreadResponse.parsed?.threadPosts ?? [],
     next: undefined,
     userResponse: undefined,
   };

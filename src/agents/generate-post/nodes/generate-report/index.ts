@@ -1,6 +1,6 @@
 import { LangGraphRunnableConfig } from "@langchain/langgraph";
 import { GeneratePostAnnotation } from "../../generate-post-state.js";
-import { ChatAnthropic } from "@langchain/anthropic";
+import { createLLMAdapter } from "../../../../config/llm-adapter.js";
 import { GENERATE_REPORT_PROMPT } from "./prompts.js";
 
 /**
@@ -36,10 +36,7 @@ export async function generateContentReport(
     );
   }
 
-  const reportModel = new ChatAnthropic({
-    model: "claude-3-5-sonnet-latest",
-    temperature: 0,
-  });
+  const reportModel = createLLMAdapter();
 
   const result = await reportModel.invoke([
     {

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ChatAnthropic } from "@langchain/anthropic";
+import { createLLMAdapter } from "../../../config/llm-adapter.js";
 import { toZonedTime } from "date-fns-tz";
 import { DateType } from "../../types.js";
 import { timezoneToUtc } from "../../../utils/date.js";
@@ -43,12 +43,10 @@ export async function updateScheduledDate(
   if (!state.userResponse) {
     throw new Error("No user response found");
   }
-  const model = new ChatAnthropic({
-    model: "claude-3-5-sonnet-latest",
-    temperature: 0.5,
-  }).withStructuredOutput(scheduleDateSchema, {
-    name: "scheduleDate",
-  });
+  const model = createLLMAdapter()
+    .withStructuredOutput(scheduleDateSchema, {
+      name: "scheduleDate",
+    });
   const pstDate = toZonedTime(new Date(), "America/Los_Angeles");
   const pstDateString = pstDate.toISOString();
 
@@ -69,17 +67,17 @@ export async function updateScheduledDate(
   ]);
 
   if (
-    typeof result.scheduleDate === "string" &&
-    ["p1", "p2", "p3"].includes(result.scheduleDate)
+    typeof result.parsed?.scheduleDate === "string" &&
+    ["p1", "p2", "p3"].includes(result.parsed.scheduleDate)
   ) {
     return {
-      scheduleDate: result.scheduleDate as DateType,
+      scheduleDate: result.parsed.scheduleDate as DateType,
     };
   }
 
   return {
     next: undefined,
     userResponse: undefined,
-    scheduleDate: timezoneToUtc(result.scheduleDate),
+    scheduleDate: result.parsed?.scheduleDate ? timezoneToUtc(result.parsed.scheduleDate) : undefined,
   };
 }

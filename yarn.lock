@@ -502,6 +502,11 @@
   resolved "https://registry.yarnpkg.com/@eslint/js/-/js-9.20.0.tgz#7421bcbe74889fcd65d1be59f00130c289856eb4"
   integrity sha512-iZA07H9io9Wn836aVTytRaNqh00Sad+EamwOVJT12GTLw1VGMFV/4JaME+JjLtr9fiGaoWgYnS54wrfWsSs4oQ==
 
+"@google/generative-ai@^0.21.0":
+  version "0.21.0"
+  resolved "https://registry.yarnpkg.com/@google/generative-ai/-/generative-ai-0.21.0.tgz#a5011aab9e6082e706937b26ef23445933fa0d15"
+  integrity sha512-7XhUbtnlkSEZK15kN3t+tzIMxsbKm/dSkKBFalj+20NvPKe1kBY7mR2P7vuijEn+f06z5+A8bVGKO0v39cr6Wg==
+
 "@googleapis/youtube@^20.0.0":
   version "20.0.0"
   resolved "https://registry.yarnpkg.com/@googleapis/youtube/-/youtube-20.0.0.tgz#5bcf8473e34ed852bac76ae2f2764dac9e0e58e9"
@@ -872,7 +877,7 @@
     "@langchain/google-common" "~0.1.8"
     web-auth-library "^1.0.3"
 
-"@langchain/langgraph-api@0.0.10", "@langchain/langgraph-api@^0.0.10":
+"@langchain/langgraph-api@^0.0.10":
   version "0.0.10"
   resolved "https://registry.yarnpkg.com/@langchain/langgraph-api/-/langgraph-api-0.0.10.tgz#3212637a62d1d0af46d68891e141367fe149fa74"
   integrity sha512-q+QNZgKm9RwuYzB3Yv51Eo9zzWLuxfpAl28IxIMvJRwhkAvky6FA649jiWA5MSKEt3KVDO+ZayANuBLdLdPUTA==
@@ -903,14 +908,17 @@
   dependencies:
     uuid "^10.0.0"
 
-"@langchain/langgraph-cli@^0.0.10":
-  version "0.0.10"
-  resolved "https://registry.yarnpkg.com/@langchain/langgraph-cli/-/langgraph-cli-0.0.10.tgz#baad011aae46cdc4737f88f431e6a1555e9c214b"
-  integrity sha512-Tj8tjzCp/UYTERp7RIAjdxGXiNzOb4KTNnioP1z7wCPsf2r3dsMtumWsEXab/jY7KUwi8HwhCRQbOIVuR2x3Sw==
+"@langchain/langgraph-cli@0.0.9":
+  version "0.0.9"
+  resolved "https://registry.yarnpkg.com/@langchain/langgraph-cli/-/langgraph-cli-0.0.9.tgz#c685472d9673762bfb1d56c779572dff2305023f"
+  integrity sha512-g0wkMcoBHoBwnoPYsVCX5mopUb81/e+X+kWy92hV+LkIxUTC0dCoZB+ETWuftfpKu9vJHVPcakpA813nmzKtxw==
   dependencies:
     "@babel/code-frame" "^7.26.2"
     "@commander-js/extra-typings" "^13.0.0"
-    "@langchain/langgraph-api" "0.0.10"
+    "@hono/node-server" "^1.12.0"
+    "@hono/zod-validator" "^0.2.2"
+    "@types/json-schema" "^7.0.15"
+    "@typescript/vfs" "^1.6.0"
     chokidar "^4.0.3"
     commander "^13.0.0"
     dedent "^1.5.3"
@@ -918,10 +926,14 @@
     execa "^9.5.2"
     exit-hook "^4.0.0"
     extract-zip "^2.0.1"
+    hono "^4.5.4"
     langsmith "^0.2.15"
     open "^10.1.0"
     stacktrace-parser "^0.1.10"
+    superjson "^2.2.2"
     tar "^7.4.3"
+    tsx "^4.19.2"
+    uuid "^10.0.0"
     winston "^3.17.0"
     winston-console-format "^1.0.8"
     yaml "^2.7.0"
