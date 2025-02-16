@@ -21,6 +21,7 @@
     "lint:langgraph-json": "node scripts/checkLanggraphPaths.js",
     "lint:all": "yarn lint & yarn lint:langgraph-json",
     "test:all": "yarn test && yarn test:int && yarn lint:langgraph",
+    "start": "yarn start:auth",
     "start:auth": "yarn tsx src/clients/auth-server.ts",
     "generate-post": "yarn ts-node --esm scripts/generate-post.ts",
     "cron:create": "yarn tsx scripts/crons/create-cron.ts",
@@ -30,8 +31,8 @@
     "get:scheduled_runs": "yarn tsx scripts/get-scheduled-runs.ts",
     "get:used_links": "yarn tsx scripts/get-all-used-links.ts",
     "graph:delete:run_thread": "yarn tsx scripts/delete-run-thread.ts",
-    "langgraph:up": "langgraph up --watch --port 54367",
-    "langgraph:in_mem:up": "npx @langchain/langgraph-cli dev --port 54367"
+    "langgraph:up": "cross-env NODE_OPTIONS='--experimental-vm-modules' npx @langchain/langgraph-cli up --watch --port 54367",
+    "langgraph:in_mem:up": "cross-env NODE_OPTIONS='--experimental-vm-modules' npx @langchain/langgraph-cli dev --port 54367"
   },
   "dependencies": {
     "@arcadeai/arcadejs": "^1.0.0",
@@ -41,7 +42,7 @@
     "@langchain/core": "^0.3.34",
     "@langchain/google-vertexai-web": "^0.1.2",
     "@langchain/langgraph": "^0.2.46",
-    "@langchain/langgraph-cli": "^0.0.10",
+    "@langchain/langgraph-cli": "0.0.9",
     "@langchain/langgraph-sdk": "^0.0.36",
     "@langchain/langgraph-api": "^0.0.10",
     "@langchain/openai": "^0.3.17",
@@ -96,5 +97,8 @@
     "tsx": "^4.19.2",
     "typescript": "^5.3.3",
     "ts-node": "^10.9.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

@@ -1,23 +1,18 @@
-# Use the official Node.js 18 image based on Alpine Linux
-FROM node:18-alpine
+# Use a Node version that meets the requirement (>=19.0.0)
+FROM node:20-alpine
 
-# Create and set the working directory in the container
+# Set the working directory inside the container
 WORKDIR /app
 
-# Copy package files first to leverage Docker cache for npm install
-COPY package*.json ./
+# Copy package files and install dependencies
+COPY package.json yarn.lock ./
+RUN yarn install
 
-# Install dependencies
-RUN npm install
-
-# Copy the rest of your application code into the container
+# Copy the rest of your application code
 COPY . .
 
-# If your app needs a build step, uncomment the next line (and ensure you have a build script defined in package.json)
-# RUN npm run build
-
-# Expose the port that your application will listen on (adjust if necessary)
-EXPOSE 3000
-
-# Define the command to run your app; adjust if your start command is different
-CMD ["npm", "start"]
+# Specify the command to run your app.
+# If you're using the default start command and have upgraded package.json to include "start",
+# you can use: CMD ["yarn", "start"]
+# Otherwise, if you want to run "start:auth", use:
+CMD ["yarn", "start:auth"]
