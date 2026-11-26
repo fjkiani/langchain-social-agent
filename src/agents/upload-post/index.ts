@@ -17,10 +17,21 @@ import {
   LINKEDIN_ACCESS_TOKEN,
   LINKEDIN_ORGANIZATION_ID,
   LINKEDIN_PERSON_URN,
+  PLATFORMS,
   POST_TO_LINKEDIN_ORGANIZATION,
   TEXT_ONLY_MODE,
 } from "../generate-post/constants.js";
 import { SlackClient } from "../../clients/slack.js";
+
+/** Per-platform upload result surfaced back to the bridge UI (handoff §6). */
+export interface PlatformUploadResult {
+  platform: "twitter" | "linkedin";
+  attempted: boolean;
+  ok: boolean;
+  /** Platform post URN/id when the client returned one (e.g. LinkedIn ugcPost/share URN). */
+  urn?: string;
+  error?: string;
+}
 
 async function getMediaFromImage(image?: {
   imageUrl: string;
@@ -43,10 +54,20 @@ const UploadPostAnnotation = Annotation.Root({
       }
     | undefined
   >,
+  /** Per-platform upload results (populated by the uploadPost node). */
+  results: Annotation<PlatformUploadResult[] | undefined>,
 });
 
 const UploadPostGraphConfiguration = Annotation.Root({
   [POST_TO_LINKEDIN_ORGANIZATION]: Annotation<boolean | undefined>,
+  /**
+   * Optional platform allowlist, e.g. ["linkedin", "twitter"].
+   * Unset = both attempted (backwards compatible).
+   */
+  [PLATFORMS]: Annotation<string[] | undefined>({
+    reducer: (_state, update) => update,
+    default: () => undefined,
+  }),
   /**
    * Whether or not to use text only mode throughout the graph.
    * If true, it will not try to extract, validate, or upload images.
@@ -115,134 +136,230 @@ export async function uploadPost(
   const isTextOnlyMode = isTextOnly(config);
   const postToLinkedInOrg = shouldPostToLinkedInOrg(config);
 
-  try {
-    let twitterClient: TwitterClient;
-    const useArcadeAuth = process.env.USE_ARCADE_AUTH;
-    const useTwitterApiOnly = process.env.USE_TWITTER_API_ONLY;
+  // Platform allowlist (handoff §6): unset = both, for backwards compatibility.
+  const allowed = new Set(
+    (config.configurable?.[PLATFORMS] as string[] | undefined)?.map((p) =>
+      p.toLowerCase(),
+    ) ?? ["twitter", "linkedin"],
+  );
+  const results: PlatformUploadResult[] = [];
 
-    if (useTwitterApiOnly === "true" || useArcadeAuth !== "true") {
-      twitterClient = TwitterClient.fromBasicTwitterAuth();
-    } else {
-      const twitterUserId = process.env.TWITTER_USER_ID;
-      if (!twitterUserId) {
-        throw new Error("Twitter user ID not found in configurable fields.");
-      }
+  if (allowed.has("twitter")) {
+    try {
+      let twitterClient: TwitterClient;
+      const useArcadeAuth = process.env.USE_ARCADE_AUTH;
+      const useTwitterApiOnly = process.env.USE_TWITTER_API_ONLY;
 
-      const twitterToken = process.env.TWITTER_USER_TOKEN;
-      const twitterTokenSecret = process.env.TWITTER_USER_TOKEN_SECRET;
+      if (useTwitterApiOnly === "true" || useArcadeAuth !== "true") {
+        twitterClient = TwitterClient.fromBasicTwitterAuth();
+      } else {
+        const twitterUserId = process.env.TWITTER_USER_ID;
+        if (!twitterUserId) {
+          throw new Error("Twitter user ID not found in configurable fields.");
+        }
 
-      twitterClient = await TwitterClient.fromArcade(
-        twitterUserId,
-        {
-          twitterToken,
-          twitterTokenSecret,
-        },
-        {
-          textOnlyMode: isTextOnlyMode,
-        },
-      );
-    }
+        const twitterToken = process.env.TWITTER_USER_TOKEN;
+        const twitterTokenSecret = process.env.TWITTER_USER_TOKEN_SECRET;
 
-    let mediaBuffer: CreateMediaRequest | undefined = undefined;
-    if (!isTextOnlyMode) {
-      mediaBuffer = await getMediaFromImage(state.image);
-    }
-
-    await twitterClient.uploadTweet({
-      text: state.post,
-      ...(mediaBuffer && { media: mediaBuffer }),
-    });
-    console.log("✅ Successfully uploaded Tweet ✅");
-  } catch (e: any) {
-    console.error("Failed to upload post:", e);
-    let errorString = "";
-    if (typeof e === "object" && "message" in e) {
-      errorString = e.message;
-    } else {
-      errorString = e;
-    }
-    await postUploadFailureToSlack({
-      uploadDestination: "twitter",
-      error: errorString,
-      threadId:
-        config.configurable?.thread_id || "no thread id found in configurable",
-      postContent: state.post,
-      image: state.image,
-    });
-  }
-
-  try {
-    let linkedInClient: LinkedInClient;
-
-    const useArcadeAuth = process.env.USE_ARCADE_AUTH;
-    if (useArcadeAuth === "true") {
-      const linkedInUserId = process.env.LINKEDIN_USER_ID;
-      if (!linkedInUserId) {
-        throw new Error("LinkedIn user ID not found in configurable fields.");
-      }
-
-      linkedInClient = await LinkedInClient.fromArcade(linkedInUserId, {
-        postToOrganization: postToLinkedInOrg,
-      });
-    } else {
-      const accessToken =
-        process.env.LINKEDIN_ACCESS_TOKEN ||
-        config.configurable?.[LINKEDIN_ACCESS_TOKEN];
-      if (!accessToken) {
-        throw new Error(
-          "LinkedIn access token not found in environment or configurable fields. Either set it, or use Arcade Auth.",
+        twitterClient = await TwitterClient.fromArcade(
+          twitterUserId,
+          {
+            twitterToken,
+            twitterTokenSecret,
+          },
+          {
+            textOnlyMode: isTextOnlyMode,
+          },
         );
       }
 
-      const personUrn =
-        process.env.LINKEDIN_PERSON_URN ||
-        config.configurable?.[LINKEDIN_PERSON_URN];
-      const organizationId =
-        process.env.LINKEDIN_ORGANIZATION_ID ||
-        config.configurable?.[LINKEDIN_ORGANIZATION_ID];
-      linkedInClient = new LinkedInClient({
-        accessToken: accessToken,
-        personUrn: personUrn,
-        organizationId: organizationId,
+      let mediaBuffer: CreateMediaRequest | undefined = undefined;
+      if (!isTextOnlyMode) {
+        mediaBuffer = await getMediaFromImage(state.image);
+      }
+
+      await twitterClient.uploadTweet({
+        text: state.post,
+        ...(mediaBuffer && { media: mediaBuffer }),
+      });
+      console.log("✅ Successfully uploaded Tweet ✅");
+      results.push({ platform: "twitter", attempted: true, ok: true });
+    } catch (e: any) {
+      console.error("Failed to upload post:", e);
+      let errorString = "";
+      if (typeof e === "object" && "message" in e) {
+        errorString = e.message;
+      } else {
+        errorString = e;
+      }
+      results.push({
+        platform: "twitter",
+        attempted: true,
+        ok: false,
+        error: errorString,
+      });
+      await postUploadFailureToSlack({
+        uploadDestination: "twitter",
+        error: errorString,
+        threadId:
+          config.configurable?.thread_id ||
+          "no thread id found in configurable",
+        postContent: state.post,
+        image: state.image,
       });
     }
-
-    if (!isTextOnlyMode && state.image) {
-      await linkedInClient.createImagePost(
-        {
-          text: state.post,
-          imageUrl: state.image.imageUrl,
-        },
-        {
-          postToOrganization: postToLinkedInOrg,
-        },
-      );
-    } else {
-      await linkedInClient.createTextPost(state.post, {
-        postToOrganization: postToLinkedInOrg,
-      });
-    }
-
-    console.log("✅ Successfully uploaded post to LinkedIn ✅");
-  } catch (e: any) {
-    console.error("Failed to upload post:", e);
-    let errorString = "";
-    if (typeof e === "object" && "message" in e) {
-      errorString = e.message;
-    } else {
-      errorString = e;
-    }
-    await postUploadFailureToSlack({
-      uploadDestination: "linkedin",
-      error: errorString,
-      threadId:
-        config.configurable?.thread_id || "no thread id found in configurable",
-      postContent: state.post,
-      image: state.image,
+  } else {
+    results.push({
+      platform: "twitter",
+      attempted: false,
+      ok: false,
+      error: "skipped: not in platforms allowlist",
     });
   }
 
-  return {};
+  if (allowed.has("linkedin")) {
+    try {
+      let linkedInClient: LinkedInClient;
+
+      const useArcadeAuth = process.env.USE_ARCADE_AUTH;
+      if (useArcadeAuth === "true") {
+        const linkedInUserId = process.env.LINKEDIN_USER_ID;
+        if (!linkedInUserId) {
+          throw new Error("LinkedIn user ID not found in configurable fields.");
+        }
+
+        const organizationId =
+          process.env.LINKEDIN_ORGANIZATION_ID ||
+          config.configurable?.[LINKEDIN_ORGANIZATION_ID];
+        linkedInClient = await LinkedInClient.fromArcade(linkedInUserId, {
+          postToOrganization: postToLinkedInOrg,
+          organizationId,
+        });
+      } else {
+        const accessToken =
+          process.env.LINKEDIN_ACCESS_TOKEN ||
+          config.configurable?.[LINKEDIN_ACCESS_TOKEN];
+        if (!accessToken) {
+          throw new Error(
+            "LinkedIn access token not found in environment or configurable fields. Either set it, or use Arcade Auth.",
+          );
+        }
+
+        const personUrn =
+          process.env.LINKEDIN_PERSON_URN ||
+          config.configurable?.[LINKEDIN_PERSON_URN];
+        const organizationId =
+          process.env.LINKEDIN_ORGANIZATION_ID ||
+          config.configurable?.[LINKEDIN_ORGANIZATION_ID];
+        linkedInClient = new LinkedInClient({
+          accessToken: accessToken,
+          personUrn: personUrn,
+          organizationId: organizationId,
+        });
+      }
+
+      let urn: string | undefined = undefined;
+      if (!isTextOnlyMode && state.image) {
+        const mime = state.image.mimeType || "";
+        const isVideo =
+          mime.startsWith("video/") ||
+          /\.(mp4|webm|mov)(\?|$)/i.test(state.image.imageUrl);
+
+        if (isVideo) {
+          const videoResult = await linkedInClient.createVideoPost(
+            {
+              text: state.post,
+              videoUrl: state.image.imageUrl,
+            },
+            {
+              postToOrganization: postToLinkedInOrg,
+            },
+          );
+          urn =
+            typeof videoResult === "string"
+              ? videoResult
+              : ((videoResult as any)?.id ??
+                (videoResult as any)?.urn ??
+                undefined);
+          console.log(
+            "✅ Successfully uploaded video post to LinkedIn ✅",
+            videoResult,
+          );
+        } else {
+          const imageResult = await linkedInClient.createImagePost(
+            {
+              text: state.post,
+              imageUrl: state.image.imageUrl,
+            },
+            {
+              postToOrganization: postToLinkedInOrg,
+            },
+          );
+          urn =
+            typeof imageResult === "string"
+              ? imageResult
+              : ((imageResult as any)?.id ??
+                (imageResult as any)?.urn ??
+                undefined);
+          console.log(
+            "✅ Successfully uploaded image post to LinkedIn ✅",
+            imageResult,
+          );
+        }
+      } else {
+        const textResult = await linkedInClient.createTextPost(state.post, {
+          postToOrganization: postToLinkedInOrg,
+        });
+        urn =
+          typeof textResult === "string"
+            ? textResult
+            : ((textResult as any)?.id ??
+              (textResult as any)?.urn ??
+              undefined);
+        console.log("✅ Successfully uploaded post to LinkedIn ✅", textResult);
+      }
+      results.push({
+        platform: "linkedin",
+        attempted: true,
+        ok: true,
+        ...(urn && { urn }),
+      });
+    } catch (e: any) {
+      console.error("Failed to upload post:", e);
+      let errorString = "";
+      if (typeof e === "object" && "message" in e) {
+        errorString = e.message;
+      } else {
+        errorString = e;
+      }
+      results.push({
+        platform: "linkedin",
+        attempted: true,
+        ok: false,
+        error: errorString,
+      });
+      await postUploadFailureToSlack({
+        uploadDestination: "linkedin",
+        error: errorString,
+        threadId:
+          config.configurable?.thread_id ||
+          "no thread id found in configurable",
+        postContent: state.post,
+        image: state.image,
+      });
+    }
+  } else {
+    results.push({
+      platform: "linkedin",
+      attempted: false,
+      ok: false,
+      error: "skipped: not in platforms allowlist",
+    });
+  }
+
+  // Per-platform results reach the bridge/UI; a LinkedIn success is never
+  // swallowed by a Twitter failure (and vice versa).
+  return { results };
 }
 
 const uploadPostWorkflow = new StateGraph(

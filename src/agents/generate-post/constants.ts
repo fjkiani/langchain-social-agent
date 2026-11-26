@@ -90,6 +90,12 @@ export const LINKEDIN_ORGANIZATION_ID = "linkedInOrganizationId";
 export const LINKEDIN_ACCESS_TOKEN = "linkedInAccessToken";
 export const POST_TO_LINKEDIN_ORGANIZATION = "postToLinkedInOrganization";
 export const LINKEDIN_USER_ID = "linkedInUserId";
+/**
+ * Optional platform allowlist for upload_post (zeta-tech bridge extension).
+ * Pass via configurable: platforms: ["linkedin", "twitter"].
+ * Unset = both platforms attempted (backwards compatible).
+ */
+export const PLATFORMS = "platforms";
 // Twitter
 export const TWITTER_USER_ID = "twitterUserId";
 export const TWITTER_TOKEN = "twitterToken";

@@ -61,10 +61,9 @@ export async function rewriteThread(
     );
   }
 
-  const rewriteThreadModel = createLLMAdapter()
-    .withStructuredOutput(schema, {
-      name: "rewriteThreadPosts",
-    });
+  const rewriteThreadModel = createLLMAdapter().withStructuredOutput(schema, {
+    name: "rewriteThreadPosts",
+  });
 
   const threadReflections = await getThreadReflections(config);
   let threadReflectionsPrompt = "";

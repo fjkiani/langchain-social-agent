@@ -1,3 +1,19 @@
+# Scratchpad
+
+## Current Task
+Production handoff docs (anti-sandbag) + push to both repos
+
+## Plan
+[X] 1. Explore bridge / LinkedIn / TikTok / Hygraph / portal as-built
+[X] 2. Write zeta-tech bridge HANDOFF.md + docs/PRODUCTION-HANDOFF.md
+[X] 3. Write langchain-social-agent docs/PRODUCTION-HANDOFF.md
+[X] 4. Commit `[Cursor] …` via -F; push both branches; patch on 403
+
+## Notes
+- Live verifies: text urn:li:share:7531543177888116736; video urn:li:ugcPost:7531543923190833152
+- Instagram: not implemented; TikTok on PR #1 branch only
+- Asset poll 400 is known quirk; do not claim failure from poll alone
+
 # Instructions
 
 During you interaction with the user, if you find anything reusable in this project (e.g. version of a library, model name), especially about a fix to a mistake you made or a correction you received, you should take note in the `Lessons` section in the `.cursorrules` file so you will not make the same mistake again. 
@@ -250,3 +266,8 @@ Implementing DeepSeek with Hyperbolic Fallback Integration
 4. Add comprehensive testing
 
 Would you like me to proceed with implementing the DeepSeek provider in Python?
+## User Specified Lessons (social/CrisPRO)
+- Arcade LinkedIn auth URLs are single-use; browser `flow_not_found` means re-run `yarn tsx scripts/authorize-linkedin-org.mts` for a fresh URL.
+- LinkedIn video needs public HTTPS `video/mp4` (Hygraph graphassets). Never YouTube/Drive/NotebookLM googleusercontent.
+- LinkedIn asset-status GET may 400 Invalid asset id; createVideoPost can still succeed — trust ugcPost URN.
+- Instagram is not implemented; TikTok lives on branch `cursor/add-tiktok-0411` (PR #1), not the CrisPRO org branch.

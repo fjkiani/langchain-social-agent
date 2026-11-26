@@ -35,7 +35,9 @@ async function runReflections({
   userResponse,
 }: RunReflectionsArgs) {
   const client = new Client({
-    apiUrl: `http://localhost:${process.env.PORT}`,
+    // Same P0 as schedule-post: hosted URL must win over the dev CLI default.
+    apiUrl:
+      process.env.LANGGRAPH_API_URL || `http://localhost:${process.env.PORT}`,
   });
 
   const thread = await client.threads.create();

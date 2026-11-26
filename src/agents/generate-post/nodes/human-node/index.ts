@@ -185,11 +185,12 @@ export async function humanNode(
       throw new Error("Response args must be a string.");
     }
 
-    const { route } = await routeResponse({
+    const routeResult = await routeResponse({
       post: state.post,
       dateOrPriority: defaultDateString,
       userResponse: response.args,
     });
+    const route = routeResult.parsed?.route;
 
     if (route === "rewrite_post") {
       return {
