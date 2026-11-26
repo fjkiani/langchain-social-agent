@@ -73,7 +73,10 @@ export async function schedulePost(
   const postToLinkedInOrg = shouldPostToLinkedInOrg(config);
 
   const client = new Client({
-    apiUrl: `http://localhost:${process.env.PORT}`,
+    // Hosted LangGraph (LANGGRAPH_API_URL) wins; local CLI fallback keeps
+    // dev behavior. Hardcoding localhost broke scheduled runs remotely (§9 P0).
+    apiUrl:
+      process.env.LANGGRAPH_API_URL || `http://localhost:${process.env.PORT}`,
   });
 
   const afterSeconds = await getScheduledDateSeconds(

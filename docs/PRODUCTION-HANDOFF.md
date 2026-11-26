@@ -76,7 +76,7 @@ Ownership split: **this doc** = LangGraph graphs, Arcade/OAuth, platform clients
 | Org vs member tokens             | 403 on company page                            | Token without `w_organization_social`          | Authorize with org scopes; confirm admin of 107412290                                                                                            | P0           |
 | Dual LangGraph / `.env` drift    | Intermittent auth                              | Two processes or unsynced env                  | One CLI; restart after auth; never copy tokens into bridge                                                                                       | P0           |
 | LangGraph localhost-only publish | Bridge 503 in Cursor publish                   | `LANGGRAPH_API_URL=http://localhost:54367`     | Host LangGraph Cloud/self-host; update publish secret                                                                                            | P0           |
-| schedule-post localhost          | Scheduled runs never fire remotely             | `Client({ apiUrl: http://localhost:${PORT} })` | Use `process.env.LANGGRAPH_API_URL` (or SDK default)                                                                                             | P0           |
+| schedule-post localhost          | Scheduled runs never fire remotely             | `Client({ apiUrl: http://localhost:${PORT} })` | **Fixed on branch**: `LANGGRAPH_API_URL` env wins, localhost fallback for dev (schedule-post + rewrite-post)                                     | ~~P0~~ FIXED |
 | LinkedIn asset poll 400          | Noise / false failure perception               | Wrong/legacy assets GET encoding               | Keep proceed-on-timeout; evaluate LinkedIn Videos API / correct status resource                                                                  | P1           |
 | No public lesson mp4             | Video path unused for classroom content        | Content pipeline stores YouTube in `videoUrl`  | Hygraph `videoFile` CDN; `scripts/resolve-hygraph-video.mts`                                                                                     | P0           |
 | upload_post swallows errors      | Bridge shows ok while LinkedIn failed          | try/catch without rethrow                      | **Fixed on branch**: per-platform `results` array in state annotation (`{platform, attempted, ok, urn?, error?}`); failures still Slack-notified | ~~P0~~ FIXED |
@@ -252,16 +252,16 @@ CrisPRO vs personal: configurable `postToLinkedInOrganization` + `linkedInOrgani
 
 ## 9. LangGraph extension plan
 
-| Addition               | Detail                                                                                                    |
-| ---------------------- | --------------------------------------------------------------------------------------------------------- |
-| Fix schedule client    | Replace localhost `PORT` with `LANGGRAPH_API_URL` in `schedule-post/index.ts` (+ thread schedule sibling) |
-| `upload_post` state    | **Done**: `results` annotation (+ `platforms: string[]` configurable); errors still surfaced via Slack    |
-| `gtm_strategist` graph | Register in `langgraph.json`                                                                              |
-| `monitor_auth` cron    | `scripts/crons/create-cron.ts` targeting new graph weekly                                                 |
-| `advise` node          | LLM summary of failures from Slack/LangSmith — new                                                        |
-| Multi-platform fan-out | Parallel Send to platform-specific nodes instead of one try/catch blob                                    |
-| HITL                   | Keep `interrupt()` in auth-socials + human-node; Agent Inbox setup in README                              |
-| Feature flags          | Env `ENABLE_TWITTER_UPLOAD`, `ENABLE_TIKTOK_UPLOAD`, `ENABLE_INSTAGRAM_UPLOAD`                            |
+| Addition               | Detail                                                                                                 |
+| ---------------------- | ------------------------------------------------------------------------------------------------------ |
+| Fix schedule client    | **Done**: `schedule-post/index.ts` now uses `process.env.LANGGRAPH_API_URL                             |     | http://localhost:${PORT}` |
+| `upload_post` state    | **Done**: `results` annotation (+ `platforms: string[]` configurable); errors still surfaced via Slack |
+| `gtm_strategist` graph | Register in `langgraph.json`                                                                           |
+| `monitor_auth` cron    | `scripts/crons/create-cron.ts` targeting new graph weekly                                              |
+| `advise` node          | LLM summary of failures from Slack/LangSmith — new                                                     |
+| Multi-platform fan-out | Parallel Send to platform-specific nodes instead of one try/catch blob                                 |
+| HITL                   | Keep `interrupt()` in auth-socials + human-node; Agent Inbox setup in README                           |
+| Feature flags          | Env `ENABLE_TWITTER_UPLOAD`, `ENABLE_TIKTOK_UPLOAD`, `ENABLE_INSTAGRAM_UPLOAD`                         |
 
 ---
 
