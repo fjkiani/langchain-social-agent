@@ -188,7 +188,9 @@ export class LinkedInClient {
     mediaUrl: string,
     options: {
       author: string;
-      recipe?: "urn:li:digitalmediaRecipe:feedshare-image" | "urn:li:digitalmediaRecipe:feedshare-video";
+      recipe?:
+        | "urn:li:digitalmediaRecipe:feedshare-image"
+        | "urn:li:digitalmediaRecipe:feedshare-video";
       label?: string;
     },
   ): Promise<string> {

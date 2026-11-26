@@ -6,8 +6,7 @@ async function main() {
   const apiUrl = process.env.LANGGRAPH_API_URL || "http://localhost:54367";
   const client = new Client({ apiUrl });
 
-  const post =
-    `E2E upload_post → LinkedIn via Arcade (${new Date().toISOString()}).`;
+  const post = `E2E upload_post → LinkedIn via Arcade (${new Date().toISOString()}).`;
 
   console.log("Creating thread against", apiUrl);
   const { thread_id } = await client.threads.create();

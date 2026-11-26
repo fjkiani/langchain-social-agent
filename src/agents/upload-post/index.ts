@@ -250,10 +250,7 @@ export async function uploadPost(
       const textResult = await linkedInClient.createTextPost(state.post, {
         postToOrganization: postToLinkedInOrg,
       });
-      console.log(
-        "✅ Successfully uploaded post to LinkedIn ✅",
-        textResult,
-      );
+      console.log("✅ Successfully uploaded post to LinkedIn ✅", textResult);
     }
   } catch (e: any) {
     console.error("Failed to upload post:", e);
