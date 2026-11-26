@@ -17,9 +17,10 @@ Connect NotebookLM → social agent → CrisPRO LinkedIn company page (org posts
 [X] Fix LinkedInClient.fromArcade to pass org id + clearer pending-auth URL
 [X] Add createVideoPost (feedshare-video) + upload_post video mime path
 [X] Bridge UI/API: Crispro target + videoUrl
+[X] Commit locally; fahadkiani PR#2 pushed
+[!] Push blocked (403 cursor[bot]) for zeta-tech + langchain-social-agent — patches in Project internal/
 [ ] User must complete Arcade org OAuth (blocker for live company post)
 [ ] After org auth: text probe then video with public URL
-[ ] Commit/push PRs
 
 ## Lessons
 - LinkedIn vanity lookup `organizations?q=vanityName&vanityName=crispro` works with member token and returns numeric id
