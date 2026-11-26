@@ -1,43 +1,36 @@
 # Scratchpad
 
 ## Current Task
-Ship/verify CrisPRO LinkedIn company-page path after Arcade OAuth approval (PR #2)
+Arcade LinkedIn org auth after flow_not_found — DONE authorized
+
+## Diagnosis
+- flow_not_found on Flow ID 2acb144d-909e-4309-8799-32b1941c0edb
+- Cause: stale/expired/consumed Arcade auth URL (https://cloud.arcade.dev/a/KbDeMBv1W3iys4Yd)
+- Not an API-key mismatch: same ARCADE_API_KEY returns ORG_AUTH_OK for org scopes
 
 ## Progress
-[X] Checkout PR #2 branch `cursor/linkedin-crispro-org-0411`
-[X] Confirm scripts: authorize-linkedin-org, post-crispro-org, resolve-crispro-org
-[X] Resolve public Hygraph glassbox-ai video/mp4 (no NotebookLM URL)
-[X] Add dotenv + DRY_RUN + resolve-hygraph-video helper
-[X] Re-run authorize → blocked: missing ARCADE_API_KEY (and LINKEDIN_USER_ID for post)
-[X] Pushed script harden + resolve-hygraph-video to PR #2 branch (b4e3496)
-[!] PR body/comment: ManagePullRequest unavailable; gh write 403
-[ ] Inject secrets → ORG_AUTH_OK → live text + video company posts
+[X] Verified .env: USE_ARCADE_AUTH, ARCADE_API_KEY, LINKEDIN_USER_ID, LINKEDIN_ORGANIZATION_ID=107412290, POST_TO_LINKEDIN_ORGANIZATION
+[X] Ran authorize-linkedin-org.mts → status=completed, hasToken=true, ORG_AUTH_OK
+[X] Verified LinkedInClient.fromArcade(..., postToOrganization: true) OK
+[X] Hardened authorize script (dotenv already present upstream; USE_ARCADE_AUTH check + flow_not_found docs)
 
-## Video URL (verified HEAD content-type video/mp4)
-VIDEO_URL=https://us-west-2.graphassets.com/cm65gc2pl00vr08gs2em34vmw/cmkrjbuftdycb07lpstjklcss
-
-## Missing secrets (names only)
-- ARCADE_API_KEY (required)
-- LINKEDIN_USER_ID (required for post; authorize defaults to fjkiani@gmail.com)
-- HYGRAPH_TOKEN / GRAPHCMS_TOKEN / HYGRAPH_ENDPOINT (optional; public graphassets fallback works)
-
-## Runnable after secrets
-```
-yarn tsx scripts/authorize-linkedin-org.mts
-DRY_RUN=1 yarn tsx scripts/post-crispro-org.mts
-yarn tsx scripts/post-crispro-org.mts
-VIDEO_URL=https://us-west-2.graphassets.com/cm65gc2pl00vr08gs2em34vmw/cmkrjbuftdycb07lpstjklcss yarn tsx scripts/post-crispro-org.mts
-```
+## User path if pending again
+1. yarn tsx scripts/authorize-linkedin-org.mts  (never reuse old URL)
+2. Open NEW authorizationUrl as CrisPRO LinkedIn admin
+3. Approve w_organization_social
+4. Re-run authorize script → expect ORG_AUTH_OK
 
 ## Lessons
 - LinkedIn vanity lookup `organizations?q=vanityName&vanityName=crispro` works with member token and returns numeric id
 - Org UGC posts need `w_organization_social`; member-only Arcade token → HTTP 403
+- Arcade `flow_not_found` = expired/consumed/stale auth flow — re-run authorize for a fresh URL; do not reopen old cloud.arcade.dev links
 - Do not use NotebookLM googleusercontent URLs for LinkedIn video — use Hygraph graphassets mp4
 - CrisPRO org scripts must `import "dotenv/config"` like other scripts
 - LangGraph host=localhost is often IPv6-only — clients must use `localhost` not `127.0.0.1`
 - Do not treat WPL_AP1 cookies as API access tokens
 - Unit Tests CI runs `yarn build` before jest; pre-existing tsc errors on main fail every PR
 - @jest/globals + ESM: use jest.unstable_mockModule + dynamic import; mockResolvedValue types as never
+
 # Instructions
 
 During you interaction with the user, if you find anything reusable in this project (e.g. version of a library, model name), especially about a fix to a mistake you made or a correction you received, you should take note in the `Lessons` section in the `.cursorrules` file so you will not make the same mistake again. 
