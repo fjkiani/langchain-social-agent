@@ -9,7 +9,8 @@ Add TikTok support to langchain-social-agent
 [X] Add shared auth/tiktok helper + constants
 [X] Wire upload_post + auth-server TikTok routes
 [X] Update env examples + README
-[ ] Typecheck/tests; commit, push, open PR
+[X] Typecheck/tests; commit, push, open PR
+    - PR: https://github.com/fjkiani/langchain-social-agent/pull/1
 
 ## Notes
 - Arcade LinkedIn still pending: https://cloud.arcade.dev/a/r-RR3itkHP8myA8Z
