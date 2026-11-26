@@ -13,7 +13,7 @@ Add TikTok support to langchain-social-agent
     - PR: https://github.com/fjkiani/langchain-social-agent/pull/1
 
 ## Notes
-- Arcade LinkedIn still pending: https://cloud.arcade.dev/a/r-RR3itkHP8myA8Z
+- Arcade LinkedIn still pending (stopped polling): https://cloud.arcade.dev/a/r-RR3itkHP8myA8Z — complete OAuth then ask to recheck
 - LINKEDIN_USER_ID=jedi@jedilabs.org; ARCADE_API_KEY set
 - Arcade: `auth.start(..., 'tiktok')` → 400 unsupported provider; social toolkit catalog has Reddit/LinkedIn/X only
 - TikTok uses Content Posting Direct Post (photo via PULL_FROM_URL); default privacy SELF_ONLY until app audit
