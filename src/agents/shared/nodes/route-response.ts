@@ -94,5 +94,9 @@ export async function routeResponse({
     },
   ]);
 
-  return result;
+  return (
+    result.parsed ?? {
+      route: "unknown_response" as const,
+    }
+  );
 }

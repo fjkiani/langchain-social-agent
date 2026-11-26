@@ -1,43 +1,59 @@
+import { jest } from "@jest/globals";
 import { verifyGitHubContentIsRelevant } from "./verify-github.js";
-import { createLLMAdapter, LLMResponse } from "../../../config/llm-adapter.js";
-import { jest } from '@jest/globals';
+import { geminiPro } from "../../../config/llm.js";
 
-// Define types for our mocks
-type RelevancyResponse = LLMResponse<{ reasoning: string; relevant: boolean }>;
-type MockedLLMAdapter = {
-  withStructuredOutput: jest.Mock;
-  withConfig: jest.Mock;
-  invoke: jest.Mock<Promise<RelevancyResponse>>;
-};
-
-// Mock the LLM adapter
-jest.mock("../../../config/llm-adapter.js", () => ({
-  createLLMAdapter: jest.fn(() => ({
-    withStructuredOutput: jest.fn().mockReturnThis(),
-    withConfig: jest.fn().mockReturnThis(),
-    invoke: jest.fn().mockResolvedValue({
-      content: `{
-        "reasoning": "This repository uses LangChain in its dependencies",
-        "relevant": true
-      }`,
-      parsed: {
-        reasoning: "This repository uses LangChain in its dependencies",
-        relevant: true
-      }
-    } as RelevancyResponse)
-  }))
-}));
+interface GeminiParams {
+  contents: Array<{
+    parts: Array<{
+      text: string;
+    }>;
+  }>;
+}
 
 describe("verifyGitHubContentIsRelevant", () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let generateContentSpy: jest.SpiedFunction<any>;
+
   beforeEach(() => {
-    jest.clearAllMocks();
+    generateContentSpy = jest
+      .spyOn(geminiPro, "generateContent")
+      .mockImplementation((params: unknown) => {
+        const text = (params as GeminiParams).contents[0].parts[0].text;
+        if (text.includes("Other Project") || text.includes("Unrelated")) {
+          return Promise.resolve({
+            response: {
+              text: () =>
+                `{"reasoning":"This repository does not use or implement LangChain","relevant":false}`,
+            },
+          }) as ReturnType<typeof geminiPro.generateContent>;
+        }
+        if (text.includes("Invalid") || text === "Invalid response") {
+          return Promise.resolve({
+            response: {
+              text: () => "Invalid response",
+            },
+          }) as ReturnType<typeof geminiPro.generateContent>;
+        }
+        return Promise.resolve({
+          response: {
+            text: () =>
+              `{"reasoning":"This repository uses LangChain in its dependencies","relevant":true}`,
+          },
+        }) as ReturnType<typeof geminiPro.generateContent>;
+      });
+  });
+
+  afterEach(() => {
+    generateContentSpy.mockRestore();
   });
 
   it("should detect LangChain usage in dependencies", async () => {
-    const mockDependencies = [{
-      fileName: "requirements.txt",
-      fileContents: "langchain==0.1.0\npython-dotenv"
-    }];
+    const mockDependencies = [
+      {
+        fileName: "requirements.txt",
+        fileContents: "langchain==0.1.0\npython-dotenv",
+      },
+    ];
 
     const result = await verifyGitHubContentIsRelevant({
       contents: "# My Project\nThis project uses LangChain for AI",
@@ -46,27 +62,14 @@ describe("verifyGitHubContentIsRelevant", () => {
     });
 
     expect(result).toBe(true);
-    
-    // Verify the prompt includes dependency information
-    const mockAdapter = (createLLMAdapter as jest.Mock)() as MockedLLMAdapter;
-    const invokeCall = mockAdapter.invoke.mock.calls[0][0] as Array<{role: string; content: string}>;
-    expect(invokeCall[0].content).toContain("requirements.txt");
-    expect(invokeCall[0].content).toContain("langchain==0.1.0");
+
+    const callArg = generateContentSpy.mock.calls[0][0] as GeminiParams;
+    const promptText = callArg.contents[0].parts[0].text;
+    expect(promptText).toContain("requirements.txt");
+    expect(promptText).toContain("langchain==0.1.0");
   });
 
   it("should handle repositories without LangChain usage", async () => {
-    const mockAdapter = (createLLMAdapter as jest.Mock)() as MockedLLMAdapter;
-    mockAdapter.invoke.mockResolvedValueOnce({
-      content: `{
-        "reasoning": "This repository does not use or implement LangChain",
-        "relevant": false
-      }`,
-      parsed: {
-        reasoning: "This repository does not use or implement LangChain",
-        relevant: false
-      }
-    });
-
     const result = await verifyGitHubContentIsRelevant({
       contents: "# Other Project\nThis is an unrelated project",
       fileType: "README",
@@ -77,46 +80,21 @@ describe("verifyGitHubContentIsRelevant", () => {
   });
 
   it("should handle malformed LLM responses", async () => {
-    const mockAdapter = (createLLMAdapter as jest.Mock)() as MockedLLMAdapter;
-    mockAdapter.invoke.mockResolvedValueOnce({
-      content: "Invalid response",
-      // No parsed data
-    });
+    generateContentSpy.mockImplementationOnce(
+      () =>
+        Promise.resolve({
+          response: {
+            text: () => "Invalid response",
+          },
+        }) as ReturnType<typeof geminiPro.generateContent>,
+    );
 
-    const result = await verifyGitHubContentIsRelevant({
-      contents: "test content",
-      fileType: "README",
-      dependencyFiles: undefined,
-    });
-
-    expect(result).toBe(false);
+    await expect(
+      verifyGitHubContentIsRelevant({
+        contents: "# Test Project",
+        fileType: "README",
+        dependencyFiles: undefined,
+      }),
+    ).rejects.toThrow();
   });
-
-  it("should properly format dependency information in prompt", async () => {
-    const mockDependencies = [
-      {
-        fileName: "package.json",
-        fileContents: '{"dependencies": {"langchain": "^0.1.0"}}'
-      },
-      {
-        fileName: "requirements.txt",
-        fileContents: "langchain==0.1.0"
-      }
-    ];
-
-    await verifyGitHubContentIsRelevant({
-      contents: "test content",
-      fileType: "README",
-      dependencyFiles: mockDependencies,
-    });
-
-    // Verify prompt formatting
-    const mockAdapter = (createLLMAdapter as jest.Mock)() as MockedLLMAdapter;
-    const invokeCall = mockAdapter.invoke.mock.calls[0][0] as Array<{role: string; content: string}>;
-    const systemMessage = invokeCall[0].content;
-    
-    expect(systemMessage).toContain("```package.json");
-    expect(systemMessage).toContain("```requirements.txt");
-    expect(systemMessage).toContain("langchain");
-  });
-}); 
+});

@@ -143,8 +143,9 @@ function formatTweets(tweets: TweetV2[]): string {
 export async function validateBulkTweets(
   state: CurateDataState,
 ): Promise<Partial<CurateDataState>> {
-  const model = createLLMAdapter()
-    .withStructuredOutput(answerSchema, { name: "answer" });
+  const model = createLLMAdapter().withStructuredOutput(answerSchema, {
+    name: "answer",
+  });
 
   // Chunk the tweets into groups of 25
   const chunkedTweets = chunkArray(state.rawTweets, 25);
@@ -160,7 +161,7 @@ export async function validateBulkTweets(
       {
         role: "user",
         content: formattedPrompt,
-      }
+      },
     ]);
 
     const answerSet = new Set(response.parsed?.answer ?? []);

@@ -13,6 +13,7 @@ import {
 } from "../utils.js";
 import { CreateMediaRequest } from "../../clients/twitter/types.js";
 import { LinkedInClient } from "../../clients/linkedin.js";
+import { TikTokClient } from "../../clients/tiktok.js";
 import {
   LINKEDIN_ACCESS_TOKEN,
   LINKEDIN_ORGANIZATION_ID,
@@ -60,7 +61,7 @@ const UploadPostGraphConfiguration = Annotation.Root({
 });
 
 interface PostUploadFailureToSlackArgs {
-  uploadDestination: "twitter" | "linkedin";
+  uploadDestination: "twitter" | "linkedin" | "tiktok";
   error: any;
   threadId: string;
   postContent: string;
@@ -240,6 +241,58 @@ export async function uploadPost(
       postContent: state.post,
       image: state.image,
     });
+  }
+
+  // TikTok Content Posting API (native — Arcade has no TikTok provider).
+  // Only runs when credentials are configured so existing Twitter/LinkedIn
+  // flows are unchanged. Text-only mode is skipped (TikTok needs media).
+  if (TikTokClient.isConfigured()) {
+    try {
+      if (isTextOnlyMode || !state.image?.imageUrl) {
+        console.warn(
+          "[TikTok] Skipping upload: TikTok requires an image or video URL (text-only mode or missing image).",
+        );
+      } else {
+        const tikTokClient = await TikTokClient.fromEnv();
+        const mimeType = state.image.mimeType || "";
+        const isVideo = mimeType.startsWith("video/");
+
+        if (isVideo) {
+          await tikTokClient.createVideoPost({
+            title: state.post,
+            videoUrl: state.image.imageUrl,
+          });
+        } else {
+          await tikTokClient.createPhotoPost({
+            title: state.post,
+            description: state.post,
+            imageUrls: [state.image.imageUrl],
+          });
+        }
+        console.log("✅ Successfully uploaded post to TikTok ✅");
+      }
+    } catch (e: any) {
+      console.error("Failed to upload post to TikTok:", e);
+      let errorString = "";
+      if (typeof e === "object" && "message" in e) {
+        errorString = e.message;
+      } else {
+        errorString = e;
+      }
+      await postUploadFailureToSlack({
+        uploadDestination: "tiktok",
+        error: errorString,
+        threadId:
+          config.configurable?.thread_id ||
+          "no thread id found in configurable",
+        postContent: state.post,
+        image: state.image,
+      });
+    }
+  } else {
+    console.log(
+      "[TikTok] Not configured (set TIKTOK_ACCESS_TOKEN + TIKTOK_OPEN_ID, or refresh credentials). Skipping.",
+    );
   }
 
   return {};

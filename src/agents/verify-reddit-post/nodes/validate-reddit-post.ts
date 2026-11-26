@@ -67,10 +67,9 @@ ${c}
 export async function validateRedditPost(
   state: VerifyRedditGraphState,
 ): Promise<Partial<VerifyRedditGraphState>> {
-  const model = createLLMAdapter()
-    .withStructuredOutput(RELEVANCY_SCHEMA, {
-      name: "relevancy",
-    });
+  const model = createLLMAdapter().withStructuredOutput(RELEVANCY_SCHEMA, {
+    name: "relevancy",
+  });
 
   const formattedUserPrompt = formatUserPrompt(state);
 

@@ -1,3 +1,29 @@
+# Scratchpad
+
+## Current task
+Add TikTok support to langchain-social-agent
+
+## Plan
+[X] Check Arcade TikTok provider/tools + existing Twitter/LinkedIn patterns
+[X] Add native TikTok client (Arcade has no TikTok provider)
+[X] Add shared auth/tiktok helper + constants
+[X] Wire upload_post + auth-server TikTok routes
+[X] Update env examples + README
+[X] Typecheck/tests; commit, push, open PR
+    - PR: https://github.com/fjkiani/langchain-social-agent/pull/1
+
+## Notes
+- Arcade LinkedIn still pending (stopped polling): https://cloud.arcade.dev/a/r-RR3itkHP8myA8Z — complete OAuth then ask to recheck
+- LINKEDIN_USER_ID=jedi@jedilabs.org; ARCADE_API_KEY set
+- Arcade: `auth.start(..., 'tiktok')` → 400 unsupported provider; social toolkit catalog has Reddit/LinkedIn/X only
+- TikTok uses Content Posting Direct Post (photo via PULL_FROM_URL); default privacy SELF_ONLY until app audit
+
+## Lessons
+- `@langchain/langgraph-cli` ENOENT on `.langgraph_api/*.json` is normal on first boot (falls back to default schema); invalid `{}` files break init — leave files absent or write valid superjson.
+- Set `LANGCHAIN_TRACING_V2=false` when no LangSmith key, otherwise CLI 401s on tenant fetch.
+- Arcade does not offer TikTok auth/tools — use native TikTok Login Kit + Content Posting API.
+- Lazy-init Gemini in `src/config/llm.ts` so LangGraph can boot without GOOGLE_API_KEY at import time.
+
 # Instructions
 
 During you interaction with the user, if you find anything reusable in this project (e.g. version of a library, model name), especially about a fix to a mistake you made or a correction you received, you should take note in the `Lessons` section in the `.cursorrules` file so you will not make the same mistake again. 

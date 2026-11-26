@@ -95,5 +95,10 @@ export const TWITTER_USER_ID = "twitterUserId";
 export const TWITTER_TOKEN = "twitterToken";
 export const TWITTER_TOKEN_SECRET = "twitterTokenSecret";
 export const INGEST_TWITTER_USERNAME = "ingestTwitterUsername";
+// TikTok
+export const TIKTOK_USER_ID = "tikTokUserId";
+export const TIKTOK_ACCESS_TOKEN = "tikTokAccessToken";
+export const TIKTOK_OPEN_ID = "tikTokOpenId";
+export const TIKTOK_REFRESH_TOKEN = "tikTokRefreshToken";
 // Simplified text only mode
 export const TEXT_ONLY_MODE = "textOnlyMode";

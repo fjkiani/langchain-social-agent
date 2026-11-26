@@ -12,10 +12,12 @@ This project demonstrates the use of LangChain for building AI applications.
 - Built with TypeScript
       `,
       fileType: "README",
-      dependencyFiles: [{
-        fileName: "package.json",
-        fileContents: '{"dependencies": {"langchain": "^0.1.0"}}'
-      }],
+      dependencyFiles: [
+        {
+          fileName: "package.json",
+          fileContents: '{"dependencies": {"langchain": "^0.1.0"}}',
+        },
+      ],
     });
 
     expect(result).toBe(true);
@@ -32,10 +34,12 @@ A project that might use LangChain.
 Check package.json for details.
       `,
       fileType: "README",
-      dependencyFiles: [{
-        fileName: "package.json",
-        fileContents: '{"dependencies": {"@langchain/core": "^0.1.0"}}'
-      }],
+      dependencyFiles: [
+        {
+          fileName: "package.json",
+          fileContents: '{"dependencies": {"@langchain/core": "^0.1.0"}}',
+        },
+      ],
     });
 
     // Log the response to see Gemini's reasoning
@@ -48,12 +52,14 @@ Check package.json for details.
 A simple web application using Express.js
       `,
       fileType: "README",
-      dependencyFiles: [{
-        fileName: "package.json",
-        fileContents: '{"dependencies": {"express": "^4.17.1"}}'
-      }],
+      dependencyFiles: [
+        {
+          fileName: "package.json",
+          fileContents: '{"dependencies": {"express": "^4.17.1"}}',
+        },
+      ],
     });
 
     expect(result).toBe(false);
   }, 30000);
-}); 
+});
