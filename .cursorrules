@@ -8,8 +8,10 @@ Ship/verify CrisPRO LinkedIn company-page path after Arcade OAuth approval (PR #
 [X] Confirm scripts: authorize-linkedin-org, post-crispro-org, resolve-crispro-org
 [X] Resolve public Hygraph glassbox-ai video/mp4 (no NotebookLM URL)
 [X] Add dotenv + DRY_RUN + resolve-hygraph-video helper
-[!] Re-run authorize → blocked: missing ARCADE_API_KEY (and LINKEDIN_USER_ID for post)
-[ ] ORG_AUTH_OK then live text + video company posts
+[X] Re-run authorize → blocked: missing ARCADE_API_KEY (and LINKEDIN_USER_ID for post)
+[X] Pushed script harden + resolve-hygraph-video to PR #2 branch (b4e3496)
+[!] PR body/comment: ManagePullRequest unavailable; gh write 403
+[ ] Inject secrets → ORG_AUTH_OK → live text + video company posts
 
 ## Video URL (verified HEAD content-type video/mp4)
 VIDEO_URL=https://us-west-2.graphassets.com/cm65gc2pl00vr08gs2em34vmw/cmkrjbuftdycb07lpstjklcss
