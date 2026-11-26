@@ -92,10 +92,12 @@ export async function generateVideoSummary(url: string): Promise<string> {
 export async function verifyYouTubeContentIsRelevant(
   content: string,
 ): Promise<boolean> {
-  const relevancyModel = createLLMAdapter()
-    .withStructuredOutput(RELEVANCY_SCHEMA, {
+  const relevancyModel = createLLMAdapter().withStructuredOutput(
+    RELEVANCY_SCHEMA,
+    {
       name: "relevancy",
-    });
+    },
+  );
 
   const response = await relevancyModel
     .withConfig({

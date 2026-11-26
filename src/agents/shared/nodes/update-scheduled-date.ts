@@ -43,10 +43,9 @@ export async function updateScheduledDate(
   if (!state.userResponse) {
     throw new Error("No user response found");
   }
-  const model = createLLMAdapter()
-    .withStructuredOutput(scheduleDateSchema, {
-      name: "scheduleDate",
-    });
+  const model = createLLMAdapter().withStructuredOutput(scheduleDateSchema, {
+    name: "scheduleDate",
+  });
   const pstDate = toZonedTime(new Date(), "America/Los_Angeles");
   const pstDateString = pstDate.toISOString();
 
@@ -78,6 +77,8 @@ export async function updateScheduledDate(
   return {
     next: undefined,
     userResponse: undefined,
-    scheduleDate: result.parsed?.scheduleDate ? timezoneToUtc(result.parsed.scheduleDate) : undefined,
+    scheduleDate: result.parsed?.scheduleDate
+      ? timezoneToUtc(result.parsed.scheduleDate)
+      : undefined,
   };
 }

@@ -1,8 +1,8 @@
-import { jest } from '@jest/globals';
+import { jest } from "@jest/globals";
 import { z } from "zod";
+import { geminiPro } from "./llm.js";
 import { createLLMAdapter } from "./llm-adapter.js";
 
-// Add interface for Gemini params
 interface GeminiParams {
   contents: Array<{
     parts: Array<{
@@ -11,50 +11,47 @@ interface GeminiParams {
   }>;
 }
 
-// --- Added mock for geminiPro ---
-jest.mock("./llm.js", () => ({
-  geminiPro: {
-    generateContent: jest.fn((params: GeminiParams) => {
-      const text = params.contents[0].parts[0].text;
-      if (text.includes("Invalid JSON:")) {
-        // Return a response that does not contain any JSON
-        return Promise.resolve({
-          response: {
-            text: () => "This is not JSON"
-          }
-        });
-      } else if (text.includes("Non-schema:")) {
-        // Return a valid JSON that does not conform to the expected schema
-        return Promise.resolve({
-          response: {
-            text: () =>
-              `{"someOtherField": "value", "notInResponse": "not_a_boolean"}`
-          }
-        });
-      }
-      // Otherwise, return a valid response.
-      return Promise.resolve({
-        response: {
-          text: () =>
-            `{"reasoning": "test reasoning", "relevant": true}`
-        }
-      });
-    })
-  }
-}));
-// --- end of geminiPro mock ---
-
 const TEST_SCHEMA = z.object({
   reasoning: z.string(),
   relevant: z.boolean(),
 });
 
 describe("LLM Adapter", () => {
-  it("should handle structured output correctly", async () => {
-    const model = createLLMAdapter()
-      .withStructuredOutput(TEST_SCHEMA, {
-        name: "test",
+  beforeEach(() => {
+    jest.spyOn(geminiPro, "generateContent").mockImplementation(((
+      params: GeminiParams,
+    ) => {
+      const text = params.contents[0].parts[0].text;
+      if (text.includes("Invalid JSON:")) {
+        return Promise.resolve({
+          response: {
+            text: () => "This is not JSON",
+          },
+        });
+      } else if (text.includes("Non-schema:")) {
+        return Promise.resolve({
+          response: {
+            text: () =>
+              `{"someOtherField": "value", "notInResponse": "not_a_boolean"}`,
+          },
+        });
+      }
+      return Promise.resolve({
+        response: {
+          text: () => `{"reasoning": "test reasoning", "relevant": true}`,
+        },
       });
+    }) as typeof geminiPro.generateContent);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it("should handle structured output correctly", async () => {
+    const model = createLLMAdapter().withStructuredOutput(TEST_SCHEMA, {
+      name: "test",
+    });
 
     const result = await model.invoke([
       {
@@ -70,41 +67,32 @@ describe("LLM Adapter", () => {
   });
 
   it("should handle invalid JSON response", async () => {
-    const model = createLLMAdapter()
-      .withStructuredOutput(TEST_SCHEMA, {
-        name: "error-test",
-      });
+    const model = createLLMAdapter().withStructuredOutput(TEST_SCHEMA, {
+      name: "error-test",
+    });
 
-    // Use a prompt that includes "Invalid JSON:" to trigger that branch
     await expect(
       model.invoke([
         {
           role: "user",
           content: "Invalid JSON: Just say hello",
         },
-      ])
-    ).rejects.toThrow();
+      ]),
+    ).rejects.toThrow(/Failed to validate response/);
   });
 
-  it("should handle non-schema-conforming response", async () => {
-    const differentSchema = z.object({
-      someOtherField: z.string(),
-      notInResponse: z.boolean(),
+  it("should handle non-schema conforming JSON", async () => {
+    const model = createLLMAdapter().withStructuredOutput(TEST_SCHEMA, {
+      name: "schema-test",
     });
 
-    const model = createLLMAdapter()
-      .withStructuredOutput(differentSchema, {
-        name: "error-test",
-      });
-
-    // Use a prompt that includes "Non-schema:" to trigger the non-conforming branch
     await expect(
       model.invoke([
         {
           role: "user",
-          content: "Non-schema: Just say hello",
+          content: "Non-schema: return unexpected fields",
         },
-      ])
-    ).rejects.toThrow();
+      ]),
+    ).rejects.toThrow(/Failed to validate response/);
   });
-}); 
+});

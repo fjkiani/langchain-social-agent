@@ -57,10 +57,10 @@ export class SocialAuthServer {
 
   private configurePassport(): void {
     this.configureTwitterStrategy();
-    
+
     // Make LinkedIn configuration optional
     if (process.env.LINKEDIN_CLIENT_ID && process.env.LINKEDIN_CLIENT_SECRET) {
-        this.configureLinkedInStrategy();
+      this.configureLinkedInStrategy();
     }
 
     passport.serializeUser((user, done) => {
@@ -104,9 +104,12 @@ export class SocialAuthServer {
   }
 
   private configureLinkedInStrategy(): void {
-    if (!process.env.LINKEDIN_CLIENT_ID || !process.env.LINKEDIN_CLIENT_SECRET) {
-        // Instead of throwing error, just return if LinkedIn creds aren't present
-        return;
+    if (
+      !process.env.LINKEDIN_CLIENT_ID ||
+      !process.env.LINKEDIN_CLIENT_SECRET
+    ) {
+      // Instead of throwing error, just return if LinkedIn creds aren't present
+      return;
     }
 
     // We'll handle LinkedIn authentication directly through routes
