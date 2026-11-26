@@ -1,3 +1,31 @@
+# Scratchpad
+
+## Current Task
+Connect NotebookLM → social agent → CrisPRO LinkedIn company page (org posts + video)
+
+## Analysis
+- WPL_AP1… is a LinkedIn **browser cookie**, not an OAuth Bearer — do not use with LinkedInClient
+- Client id `86fi3fijwee1vt` is a LinkedIn developer app client id (stored in .env only)
+- Prefer Arcade org auth with existing user `fjkiani@gmail.com`
+- CrisPRO vanity `crispro` → organization id **107412290**
+- Member Arcade token posts to personal OK; org post returns 403 until `w_organization_social` approved
+
+## Plan
+[X] Identify credentials (cookie vs client id vs Arcade)
+[X] Resolve CrisPRO org id (107412290)
+[X] Set .env LINKEDIN_ORGANIZATION_ID + POST_TO_LINKEDIN_ORGANIZATION=true (not committed)
+[X] Fix LinkedInClient.fromArcade to pass org id + clearer pending-auth URL
+[X] Add createVideoPost (feedshare-video) + upload_post video mime path
+[X] Bridge UI/API: Crispro target + videoUrl
+[ ] User must complete Arcade org OAuth (blocker for live company post)
+[ ] After org auth: text probe then video with public URL
+[ ] Commit/push PRs
+
+## Lessons
+- LinkedIn vanity lookup `organizations?q=vanityName&vanityName=crispro` works with member token and returns numeric id
+- Org UGC posts need `w_organization_social`; member-only Arcade token → HTTP 403
+- LangGraph host=localhost is often IPv6-only — clients must use `localhost` not `127.0.0.1`
+- Do not treat WPL_AP1 cookies as API access tokens
 # Instructions
 
 During you interaction with the user, if you find anything reusable in this project (e.g. version of a library, model name), especially about a fix to a mistake you made or a correction you received, you should take note in the `Lessons` section in the `.cursorrules` file so you will not make the same mistake again. 

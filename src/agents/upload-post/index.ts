@@ -181,8 +181,12 @@ export async function uploadPost(
         throw new Error("LinkedIn user ID not found in configurable fields.");
       }
 
+      const organizationId =
+        process.env.LINKEDIN_ORGANIZATION_ID ||
+        config.configurable?.[LINKEDIN_ORGANIZATION_ID];
       linkedInClient = await LinkedInClient.fromArcade(linkedInUserId, {
         postToOrganization: postToLinkedInOrg,
+        organizationId,
       });
     } else {
       const accessToken =
@@ -208,22 +212,49 @@ export async function uploadPost(
     }
 
     if (!isTextOnlyMode && state.image) {
-      await linkedInClient.createImagePost(
-        {
-          text: state.post,
-          imageUrl: state.image.imageUrl,
-        },
-        {
-          postToOrganization: postToLinkedInOrg,
-        },
-      );
+      const mime = state.image.mimeType || "";
+      const isVideo =
+        mime.startsWith("video/") ||
+        /\.(mp4|webm|mov)(\?|$)/i.test(state.image.imageUrl);
+
+      if (isVideo) {
+        const videoResult = await linkedInClient.createVideoPost(
+          {
+            text: state.post,
+            videoUrl: state.image.imageUrl,
+          },
+          {
+            postToOrganization: postToLinkedInOrg,
+          },
+        );
+        console.log(
+          "✅ Successfully uploaded video post to LinkedIn ✅",
+          videoResult,
+        );
+      } else {
+        const imageResult = await linkedInClient.createImagePost(
+          {
+            text: state.post,
+            imageUrl: state.image.imageUrl,
+          },
+          {
+            postToOrganization: postToLinkedInOrg,
+          },
+        );
+        console.log(
+          "✅ Successfully uploaded image post to LinkedIn ✅",
+          imageResult,
+        );
+      }
     } else {
-      await linkedInClient.createTextPost(state.post, {
+      const textResult = await linkedInClient.createTextPost(state.post, {
         postToOrganization: postToLinkedInOrg,
       });
+      console.log(
+        "✅ Successfully uploaded post to LinkedIn ✅",
+        textResult,
+      );
     }
-
-    console.log("✅ Successfully uploaded post to LinkedIn ✅");
   } catch (e: any) {
     console.error("Failed to upload post:", e);
     let errorString = "";

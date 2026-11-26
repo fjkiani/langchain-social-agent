@@ -24,6 +24,13 @@ interface CreateLinkedInImagePostRequest {
   imageTitle?: string;
 }
 
+interface CreateLinkedInVideoPostRequest {
+  text: string;
+  videoUrl: string;
+  videoDescription?: string;
+  videoTitle?: string;
+}
+
 interface MediaUploadResponse {
   value: {
     uploadMechanism: {
@@ -117,10 +124,32 @@ export class LinkedInClient {
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const body = await response.text().catch(() => "");
+      throw new Error(
+        `HTTP error! status: ${response.status}${body ? ` body: ${body.slice(0, 500)}` : ""}`,
+      );
     }
 
-    return response.json();
+    // LinkedIn often returns 201 with an empty body + x-restli-id header
+    const restliId = response.headers.get("x-restli-id");
+    const text = await response.text();
+    if (!text) {
+      return { id: restliId } as T;
+    }
+    try {
+      const parsed = JSON.parse(text) as T;
+      if (
+        restliId &&
+        typeof parsed === "object" &&
+        parsed !== null &&
+        !("id" in (parsed as object))
+      ) {
+        return { ...(parsed as object), id: restliId } as T;
+      }
+      return parsed;
+    } catch {
+      return { id: restliId, raw: text } as T;
+    }
   }
 
   // Create a text-only post
@@ -156,17 +185,23 @@ export class LinkedInClient {
   }
 
   private async registerAndUploadMedia(
-    imageUrl: string,
+    mediaUrl: string,
     options: {
       author: string;
+      recipe?: "urn:li:digitalmediaRecipe:feedshare-image" | "urn:li:digitalmediaRecipe:feedshare-video";
+      label?: string;
     },
   ): Promise<string> {
+    const recipe =
+      options.recipe || "urn:li:digitalmediaRecipe:feedshare-image";
+    const label = options.label || "media";
+
     // Step 1: Register the upload
     const registerEndpoint = `${this.baseURL}/assets?action=registerUpload`;
 
     const registerData: RegisterUploadRequest = {
       registerUploadRequest: {
-        recipes: ["urn:li:digitalmediaRecipe:feedshare-image"],
+        recipes: [recipe],
         owner: options.author,
         serviceRelationships: [
           {
@@ -185,11 +220,16 @@ export class LinkedInClient {
       },
     );
 
-    // Step 2: Get the image data from the URL
-    const imageResponse = await fetch(imageUrl);
-    const imageBuffer = await imageResponse.arrayBuffer();
+    // Step 2: Fetch media bytes from the public URL
+    const mediaResponse = await fetch(mediaUrl);
+    if (!mediaResponse.ok) {
+      throw new Error(
+        `Failed to download ${label} from ${mediaUrl}: ${mediaResponse.status}`,
+      );
+    }
+    const mediaBuffer = await mediaResponse.arrayBuffer();
 
-    // Step 3: Upload the image to LinkedIn
+    // Step 3: Upload bytes to LinkedIn
     const uploadUrl =
       registerResponse.value.uploadMechanism[
         "com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest"
@@ -201,14 +241,58 @@ export class LinkedInClient {
         Authorization: `Bearer ${this.accessToken}`,
         "Content-Type": "application/octet-stream",
       },
-      body: imageBuffer,
+      body: mediaBuffer,
     });
 
     if (!uploadResponse.ok) {
-      throw new Error(`Failed to upload image: ${uploadResponse.statusText}`);
+      throw new Error(
+        `Failed to upload ${label}: ${uploadResponse.status} ${uploadResponse.statusText}`,
+      );
     }
 
     return registerResponse.value.asset;
+  }
+
+  /**
+   * Poll LinkedIn until a registered video asset is ready (or timeout).
+   * Images are typically READY immediately; videos need processing.
+   */
+  private async waitForAssetReady(
+    assetUrn: string,
+    {
+      attempts = 30,
+      delayMs = 2000,
+    }: { attempts?: number; delayMs?: number } = {},
+  ): Promise<void> {
+    const encoded = encodeURIComponent(assetUrn);
+    for (let i = 0; i < attempts; i++) {
+      try {
+        const status = await this.makeRequest<{
+          recipes?: Array<{ status?: string }>;
+          status?: string;
+        }>(`${this.baseURL}/assets/${encoded}`, { method: "GET" });
+        const recipeStatus = status?.recipes?.[0]?.status || status?.status;
+        if (
+          recipeStatus === "AVAILABLE" ||
+          recipeStatus === "READY" ||
+          recipeStatus === "ALLOWED"
+        ) {
+          return;
+        }
+        console.log(
+          `[LinkedIn] Waiting for asset ${assetUrn} (status=${recipeStatus || "unknown"}, try ${i + 1}/${attempts})`,
+        );
+      } catch (err: any) {
+        console.warn(
+          `[LinkedIn] Asset status poll failed (try ${i + 1}/${attempts}):`,
+          err?.message || err,
+        );
+      }
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
+    console.warn(
+      `[LinkedIn] Proceeding without confirmed READY status for ${assetUrn}`,
+    );
   }
 
   // Create a post with an image
@@ -247,6 +331,64 @@ export class LinkedInClient {
               media: mediaAsset,
               title: {
                 text: imageTitle ?? "Image title",
+              },
+            },
+          ],
+        },
+      },
+      visibility: {
+        "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC",
+      },
+    };
+
+    return this.makeRequest(endpoint, {
+      method: "POST",
+      body: JSON.stringify(postData),
+    });
+  }
+
+  /**
+   * Create a LinkedIn feed post with a video fetched from a public URL.
+   * Uses the legacy UGC + assets registerUpload flow (feedshare-video).
+   */
+  async createVideoPost(
+    {
+      text,
+      videoUrl,
+      videoDescription,
+      videoTitle,
+    }: CreateLinkedInVideoPostRequest,
+    options?: {
+      postToOrganization?: boolean;
+    },
+  ): Promise<Response> {
+    const author = this.getAuthorString(options);
+    const mediaAsset = await this.registerAndUploadMedia(videoUrl, {
+      author,
+      recipe: "urn:li:digitalmediaRecipe:feedshare-video",
+      label: "video",
+    });
+    await this.waitForAssetReady(mediaAsset);
+
+    const endpoint = `${this.baseURL}/ugcPosts`;
+    const postData = {
+      author,
+      lifecycleState: "PUBLISHED",
+      specificContent: {
+        "com.linkedin.ugc.ShareContent": {
+          shareCommentary: {
+            text,
+          },
+          shareMediaCategory: "VIDEO",
+          media: [
+            {
+              status: "READY",
+              description: {
+                text: videoDescription ?? "Video description",
+              },
+              media: mediaAsset,
+              title: {
+                text: videoTitle ?? "Video",
               },
             },
           ],
@@ -312,6 +454,7 @@ export class LinkedInClient {
     linkedInUserId: string,
     fields?: {
       postToOrganization?: boolean;
+      organizationId?: string;
     },
   ): Promise<LinkedInClient> {
     const arcade = new Arcade({
@@ -323,15 +466,23 @@ export class LinkedInClient {
     });
 
     if (!authRes.context?.token || !authRes.context?.user_info?.sub) {
+      const authUrl = authRes.url
+        ? ` Complete Arcade LinkedIn OAuth (scopes: ${scopes.join(", ")}): ${authRes.url}`
+        : "";
       throw new Error(
-        "Authorization not completed for user ID: " + linkedInUserId,
+        `Authorization not completed for user ID: ${linkedInUserId} (status=${authRes.status}).` +
+          authUrl +
+          (fields?.postToOrganization
+            ? " Company-page posting requires w_organization_social."
+            : ""),
       );
     }
 
     return new LinkedInClient({
       accessToken: authRes.context.token,
       personUrn: authRes.context.user_info.sub as string,
-      organizationId: undefined,
+      organizationId:
+        fields?.organizationId || process.env.LINKEDIN_ORGANIZATION_ID,
     });
   }
 }
