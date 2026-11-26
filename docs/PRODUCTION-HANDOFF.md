@@ -79,8 +79,8 @@ Ownership split: **this doc** = LangGraph graphs, Arcade/OAuth, platform clients
 | schedule-post localhost          | Scheduled runs never fire remotely             | `Client({ apiUrl: http://localhost:${PORT} })` | Use `process.env.LANGGRAPH_API_URL` (or SDK default)                            | P0  |
 | LinkedIn asset poll 400          | Noise / false failure perception               | Wrong/legacy assets GET encoding               | Keep proceed-on-timeout; evaluate LinkedIn Videos API / correct status resource | P1  |
 | No public lesson mp4             | Video path unused for classroom content        | Content pipeline stores YouTube in `videoUrl`  | Hygraph `videoFile` CDN; `scripts/resolve-hygraph-video.mts`                    | P0  |
-| upload_post swallows errors      | Bridge shows ok while LinkedIn failed          | try/catch without rethrow                      | Propagate per-platform status in state annotation                               | P0  |
-| Twitter always attempted         | Twitter errors on every LinkedIn-only post     | `uploadPost` always enters Twitter block       | Feature flag `ENABLE_TWITTER_UPLOAD` / platforms allowlist                      | P1  |
+| upload_post swallows errors      | Bridge shows ok while LinkedIn failed          | try/catch without rethrow                      | **Fixed on branch**: per-platform `results` array in state annotation (`{platform, attempted, ok, urn?, error?}`); failures still Slack-notified        | ~~P0~~ FIXED |
+| Twitter always attempted         | Twitter errors on every LinkedIn-only post     | `uploadPost` always enters Twitter block       | **Fixed on branch**: `platforms` configurable allowlist (unset = both, backwards compatible); skipped platforms returned as `attempted:false`     | ~~P1~~ FIXED |
 | HITL bypass via bridge           | Unreviewed posts go live                       | Bridge → `upload_post` direct                  | Route production through `generate_post` interrupt or bridge approval           | P1  |
 | Secrets                          | Risk of committing `.env`                      | Local dotenv                                   | Keep gitignored; use `.env.full.example` names only                             | P0  |
 | Rate limits                      | 429 / intermittent fail                        | Platform quotas                                | Scheduler spacing; backoff; Slack alert                                         | P2  |
@@ -210,6 +210,7 @@ Client: `src/clients/twitter/client.ts`. Always invoked inside `upload_post` tod
 | Tests            | `src/clients/tests/tiktok.test.ts`                                                                                                                          |
 
 **Extension plan:** merge TikTok PR → add configurable `platforms` allowlist → bridge passes platforms → skip unconfigured quietly → return statuses.
+**Shipped (2026-11-26, this branch):** `platforms` allowlist + per-platform `results` in state (URNs captured from `createTextPost`/`createVideoPost`/`createImagePost`). Verified: `tsc --noEmit` clean, CI unit tests 29/29, prettier/eslint clean. No live posts made.
 
 ### Instagram — **stub only (honest)**
 
@@ -254,7 +255,7 @@ CrisPRO vs personal: configurable `postToLinkedInOrganization` + `linkedInOrgani
 | Addition               | Detail                                                                                                    |
 | ---------------------- | --------------------------------------------------------------------------------------------------------- |
 | Fix schedule client    | Replace localhost `PORT` with `LANGGRAPH_API_URL` in `schedule-post/index.ts` (+ thread schedule sibling) |
-| `upload_post` state    | Add `results` + `errors` annotations; optional `platforms: string[]` in config                            |
+| `upload_post` state    | **Done**: `results` annotation (+ `platforms: string[]` configurable); errors still surfaced via Slack    |
 | `gtm_strategist` graph | Register in `langgraph.json`                                                                              |
 | `monitor_auth` cron    | `scripts/crons/create-cron.ts` targeting new graph weekly                                                 |
 | `advise` node          | LLM summary of failures from Slack/LangSmith — new                                                        |
