@@ -2,6 +2,7 @@ import { interrupt, LangGraphRunnableConfig } from "@langchain/langgraph";
 import { GeneratePostAnnotation } from "../generate-post-state.js";
 import { getLinkedInAuthOrInterrupt } from "../../shared/auth/linkedin.js";
 import { getTwitterAuthOrInterrupt } from "../../shared/auth/twitter.js";
+import { getTikTokAuthOrInterrupt } from "../../shared/auth/tiktok.js";
 import { HumanInterrupt, HumanResponse } from "../../types.js";
 import { shouldPostToLinkedInOrg } from "../../utils.js";
 
@@ -29,14 +30,28 @@ export async function authSocialsPassthrough(
     });
   }
 
-  if (!twitterHumanInterrupt && !linkedInHumanInterrupt) {
-    // Use has already authorized. Return early
+  let tikTokHumanInterrupt: HumanInterrupt | undefined = undefined;
+  const tikTokUserId = process.env.TIKTOK_USER_ID;
+  if (tikTokUserId) {
+    tikTokHumanInterrupt = await getTikTokAuthOrInterrupt({
+      tikTokUserId,
+      returnInterrupt: true,
+    });
+  }
+
+  if (
+    !twitterHumanInterrupt &&
+    !linkedInHumanInterrupt &&
+    !tikTokHumanInterrupt
+  ) {
+    // User has already authorized. Return early
     return {};
   }
 
   const combinedArgs = {
     ...twitterHumanInterrupt?.action_request.args,
     ...linkedInHumanInterrupt?.action_request.args,
+    ...tikTokHumanInterrupt?.action_request.args,
   };
 
   const description = `# Authorization Required
@@ -45,7 +60,8 @@ Please visit the following URL(s) to authorize your social media accounts:
 
 ${combinedArgs.authorizeTwitterURL ? `Twitter: ${combinedArgs.authorizeTwitterURL}` : ""}
 ${combinedArgs.authorizeLinkedInURL ? `LinkedIn: ${combinedArgs.authorizeLinkedInURL}` : ""}
-${combinedArgs.authorizationDocs ? `LinkedIn Authorization Docs: ${combinedArgs.authorizationDocs}` : ""}
+${combinedArgs.authorizeTikTokURL ? `TikTok: ${combinedArgs.authorizeTikTokURL}` : ""}
+${combinedArgs.authorizationDocs ? `Authorization Docs: ${combinedArgs.authorizationDocs}` : ""}
 
 Once done, please 'accept' this interrupt event.`;
 

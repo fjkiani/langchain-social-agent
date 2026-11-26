@@ -3,6 +3,7 @@ import passport from "passport";
 import { Strategy as TwitterStrategy } from "passport-twitter";
 import session from "express-session";
 import dotenv from "dotenv";
+import { TikTokClient } from "./tiktok.js";
 
 dotenv.config();
 
@@ -11,6 +12,8 @@ declare module "express-session" {
   interface SessionData {
     linkedinToken?: string;
     linkedinUserInfo?: any;
+    tiktokCsrfState?: string;
+    tiktokToken?: any;
   }
 }
 
@@ -56,11 +59,25 @@ export class SocialAuthServer {
   }
 
   private configurePassport(): void {
-    this.configureTwitterStrategy();
-    
+    if (process.env.TWITTER_API_KEY && process.env.TWITTER_API_KEY_SECRET) {
+      this.configureTwitterStrategy();
+    } else {
+      console.warn(
+        "[auth-server] Twitter credentials missing; /auth/twitter disabled.",
+      );
+    }
+
     // Make LinkedIn configuration optional
     if (process.env.LINKEDIN_CLIENT_ID && process.env.LINKEDIN_CLIENT_SECRET) {
-        this.configureLinkedInStrategy();
+      this.configureLinkedInStrategy();
+    }
+
+    if (process.env.TIKTOK_CLIENT_KEY && process.env.TIKTOK_CLIENT_SECRET) {
+      console.log("[auth-server] TikTok Login Kit routes enabled.");
+    } else {
+      console.warn(
+        "[auth-server] TikTok credentials missing; /auth/tiktok disabled.",
+      );
     }
 
     passport.serializeUser((user, done) => {
@@ -114,15 +131,33 @@ export class SocialAuthServer {
     // the OAuth flow manually
   }
 
+  private getTikTokRedirectUri(): string {
+    return (
+      process.env.TIKTOK_REDIRECT_URI ||
+      `http://localhost:${this.port}/auth/tiktok/callback`
+    );
+  }
+
   private setupRoutes(): void {
     this.app.get("/", (_req: Request, res: Response) => {
       res.send(
-        '<a href="/auth/twitter">Login with Twitter</a><br><a href="/auth/linkedin">Login with LinkedIn</a>',
+        [
+          '<a href="/auth/twitter">Login with Twitter</a>',
+          '<a href="/auth/linkedin">Login with LinkedIn</a>',
+          '<a href="/auth/tiktok">Login with TikTok</a>',
+        ].join("<br>"),
       );
     });
 
     // Twitter routes
-    this.app.get("/auth/twitter", passport.authenticate("twitter"));
+    this.app.get("/auth/twitter", (req: Request, res: Response, next: NextFunction) => {
+      if (!process.env.TWITTER_API_KEY || !process.env.TWITTER_API_KEY_SECRET) {
+        return res
+          .status(400)
+          .send("Twitter credentials are not configured.") as any;
+      }
+      return passport.authenticate("twitter")(req, res, next);
+    });
     this.app.get("/auth/twitter/callback", (req: Request, res: Response) => {
       passport.authenticate("twitter", {
         failureRedirect: "/login",
@@ -227,6 +262,87 @@ export class SocialAuthServer {
         } catch (error) {
           console.error("LinkedIn authentication error:", error);
           res.redirect("/");
+        }
+      })().catch(console.error);
+    });
+
+    // TikTok routes (Login Kit + Content Posting scopes)
+    this.app.get("/auth/tiktok", (req: Request, res: Response) => {
+      const clientKey = process.env.TIKTOK_CLIENT_KEY;
+      if (!clientKey || !process.env.TIKTOK_CLIENT_SECRET) {
+        return res
+          .status(400)
+          .send(
+            "TikTok credentials are not configured. Set TIKTOK_CLIENT_KEY and TIKTOK_CLIENT_SECRET.",
+          ) as any;
+      }
+
+      const csrfState = Math.random().toString(36).substring(2);
+      if (req.session) {
+        req.session.tiktokCsrfState = csrfState;
+      }
+
+      const redirectUri = this.getTikTokRedirectUri();
+      const authUrl = TikTokClient.getAuthorizationUrl({
+        clientKey,
+        redirectUri,
+        state: csrfState,
+      });
+      console.log("[auth-server] Redirecting to TikTok OAuth:", authUrl);
+      res.redirect(authUrl);
+    });
+
+    this.app.get("/auth/tiktok/callback", (req: Request, res: Response) => {
+      const { code, state, error, error_description } = req.query;
+
+      if (error) {
+        console.error("TikTok OAuth error:", error, error_description);
+        return res
+          .status(401)
+          .send(`TikTok authorization failed: ${error}`) as any;
+      }
+
+      if (
+        !state ||
+        !req.session?.tiktokCsrfState ||
+        state !== req.session.tiktokCsrfState
+      ) {
+        return res
+          .status(401)
+          .send("State mismatch. Possible CSRF attack.") as any;
+      }
+
+      if (!code || typeof code !== "string") {
+        return res.redirect("/");
+      }
+
+      (async () => {
+        try {
+          const redirectUri = this.getTikTokRedirectUri();
+          const data = await TikTokClient.exchangeCodeForToken({
+            code,
+            redirectUri,
+          });
+
+          console.log("\n✅ TIKTOK USER AUTHENTICATED ✅\n");
+          console.dir(data, { depth: null });
+          console.log(
+            "\nSet these in your .env:\n" +
+              `TIKTOK_ACCESS_TOKEN=${data.access_token}\n` +
+              `TIKTOK_REFRESH_TOKEN=${data.refresh_token}\n` +
+              `TIKTOK_OPEN_ID=${data.open_id}\n`,
+          );
+
+          if (req.session) {
+            req.session.tiktokToken = data;
+          }
+
+          res.send(
+            "<pre>TikTok auth success. Check the auth-server terminal for tokens to copy into .env.</pre>",
+          );
+        } catch (err) {
+          console.error("TikTok authentication error:", err);
+          res.status(500).send("TikTok authentication failed. See server logs.");
         }
       })().catch(console.error);
     });
