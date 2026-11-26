@@ -3,20 +3,12 @@ import { createLLMAdapter } from "../src/config/llm-adapter.js";
 import {
   RELEVANCY_SCHEMA,
   VERIFY_COMPANY_RELEVANT_CONTENT_PROMPT,
-  verifyGeneralContentIsRelevant,
 } from "../src/agents/shared/nodes/verify-general.js";
 
 // Add a check for API key
 if (!process.env.GOOGLE_API_KEY) {
   throw new Error("GOOGLE_API_KEY environment variable is not set");
 }
-
-const TEST_PROMPT = `You are an AI assistant. Given a number, determine if it's greater than 10.
-You must respond in valid JSON format with:
-{
-  "reasoning": "your explanation here",
-  "relevant": true or false
-}`;
 
 async function testVerification() {
   // Test content that should be relevant

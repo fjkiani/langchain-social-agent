@@ -1,5 +1,4 @@
 import { createLLMAdapter } from "../../../config/llm-adapter.js";
-import { ChatAnthropic } from "@langchain/anthropic";
 import { SupervisorState } from "../supervisor-state.js";
 import { z } from "zod";
 

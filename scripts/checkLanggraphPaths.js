@@ -2,12 +2,17 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
-// Function to check if a file exists
+/**
+ * @param {string} filePath
+ */
 function fileExists(filePath) {
   return fs.existsSync(filePath);
 }
 
-// Function to check if an object is exported from a file
+/**
+ * @param {string} filePath
+ * @param {string} objectName
+ */
 function isObjectExported(filePath, objectName) {
   if (filePath.endsWith(".py")) return true;
 
@@ -18,7 +23,8 @@ function isObjectExported(filePath, objectName) {
     );
     return exportRegex.test(fileContent);
   } catch (error) {
-    console.error(`Error reading file ${filePath}: ${error.message}`);
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`Error reading file ${filePath}: ${message}`);
     return false;
   }
 }
@@ -45,8 +51,8 @@ function checkLanggraphPaths() {
 
     let hasError = false;
 
-    for (const [key, value] of Object.entries(graphs)) {
-      const [filePath, objectName] = value.split(":");
+    for (const value of Object.values(graphs)) {
+      const [filePath, objectName] = String(value).split(":");
       const fullPath = path.join(__dirname, "..", filePath);
 
       if (!fileExists(fullPath)) {
@@ -71,7 +77,8 @@ function checkLanggraphPaths() {
       );
     }
   } catch (error) {
-    console.error(`Error parsing langgraph.json: ${error.message}`);
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`Error parsing langgraph.json: ${message}`);
     process.exit(1);
   }
 }

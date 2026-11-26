@@ -5,18 +5,15 @@ import { verifyGitHubContent } from "../../shared/nodes/verify-github.js";
 
 export async function verifyGitHubWrapper(
   state: CurateDataState,
-  config: LangGraphRunnableConfig,
+  _config: LangGraphRunnableConfig,
 ): Promise<Partial<CurateDataState>> {
   const verifiedRepoData: GitHubTrendingData[] = [];
 
   // Iterate over each raw GitHub repo & verify + extract page contents
   for await (const repoURL of state.rawTrendingRepos) {
-    const results = await verifyGitHubContent(
-      {
-        link: repoURL,
-      },
-      config,
-    );
+    const results = await verifyGitHubContent({
+      link: repoURL,
+    });
 
     if (
       results.relevantLinks &&
