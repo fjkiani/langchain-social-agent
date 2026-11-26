@@ -253,7 +253,7 @@ CrisPRO vs personal: configurable `postToLinkedInOrganization` + `linkedInOrgani
 ## 9. LangGraph extension plan
 
 | Addition               | Detail                                                                                                 |
-| ---------------------- | ------------------------------------------------------------------------------------------------------ |
+| ---------------------- | ------------------------------------------------------------------------------------------------------ | --- | ------------------------- |
 | Fix schedule client    | **Done**: `schedule-post/index.ts` now uses `process.env.LANGGRAPH_API_URL                             |     | http://localhost:${PORT}` |
 | `upload_post` state    | **Done**: `results` annotation (+ `platforms: string[]` configurable); errors still surfaced via Slack |
 | `gtm_strategist` graph | Register in `langgraph.json`                                                                           |
