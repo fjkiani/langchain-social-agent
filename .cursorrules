@@ -7,7 +7,7 @@ Production handoff docs (anti-sandbag) + push to both repos
 [X] 1. Explore bridge / LinkedIn / TikTok / Hygraph / portal as-built
 [X] 2. Write zeta-tech bridge HANDOFF.md + docs/PRODUCTION-HANDOFF.md
 [X] 3. Write langchain-social-agent docs/PRODUCTION-HANDOFF.md
-[ ] 4. Commit `[Cursor] …` via -F; push both branches; patch on 403
+[X] 4. Commit `[Cursor] …` via -F; push both branches; patch on 403
 
 ## Notes
 - Live verifies: text urn:li:share:7531543177888116736; video urn:li:ugcPost:7531543923190833152
