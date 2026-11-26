@@ -13,6 +13,7 @@ Arcade LinkedIn org auth after flow_not_found — DONE authorized
 [X] Ran authorize-linkedin-org.mts → status=completed, hasToken=true, ORG_AUTH_OK
 [X] Verified LinkedInClient.fromArcade(..., postToOrganization: true) OK
 [X] Hardened authorize script (dotenv already present upstream; USE_ARCADE_AUTH check + flow_not_found docs)
+[X] Pushed 8293caf to PR #2 (cursor/linkedin-crispro-org-0411)
 
 ## User path if pending again
 1. yarn tsx scripts/authorize-linkedin-org.mts  (never reuse old URL)
