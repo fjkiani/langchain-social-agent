@@ -33,10 +33,12 @@ You should provide reasoning as to why or why not the content implements your co
 async function verifyGeneralContentIsRelevant(
   content: string,
 ): Promise<boolean> {
-  const relevancyModel = createLLMAdapter()
-    .withStructuredOutput(RELEVANCY_SCHEMA, {
+  const relevancyModel = createLLMAdapter().withStructuredOutput(
+    RELEVANCY_SCHEMA,
+    {
       name: "relevancy",
-    });
+    },
+  );
 
   const response = await relevancyModel
     .withConfig({

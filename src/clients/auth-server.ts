@@ -121,9 +121,12 @@ export class SocialAuthServer {
   }
 
   private configureLinkedInStrategy(): void {
-    if (!process.env.LINKEDIN_CLIENT_ID || !process.env.LINKEDIN_CLIENT_SECRET) {
-        // Instead of throwing error, just return if LinkedIn creds aren't present
-        return;
+    if (
+      !process.env.LINKEDIN_CLIENT_ID ||
+      !process.env.LINKEDIN_CLIENT_SECRET
+    ) {
+      // Instead of throwing error, just return if LinkedIn creds aren't present
+      return;
     }
 
     // We'll handle LinkedIn authentication directly through routes
@@ -150,14 +153,20 @@ export class SocialAuthServer {
     });
 
     // Twitter routes
-    this.app.get("/auth/twitter", (req: Request, res: Response, next: NextFunction) => {
-      if (!process.env.TWITTER_API_KEY || !process.env.TWITTER_API_KEY_SECRET) {
-        return res
-          .status(400)
-          .send("Twitter credentials are not configured.") as any;
-      }
-      return passport.authenticate("twitter")(req, res, next);
-    });
+    this.app.get(
+      "/auth/twitter",
+      (req: Request, res: Response, next: NextFunction) => {
+        if (
+          !process.env.TWITTER_API_KEY ||
+          !process.env.TWITTER_API_KEY_SECRET
+        ) {
+          return res
+            .status(400)
+            .send("Twitter credentials are not configured.") as any;
+        }
+        return passport.authenticate("twitter")(req, res, next);
+      },
+    );
     this.app.get("/auth/twitter/callback", (req: Request, res: Response) => {
       passport.authenticate("twitter", {
         failureRedirect: "/login",
@@ -342,7 +351,9 @@ export class SocialAuthServer {
           );
         } catch (err) {
           console.error("TikTok authentication error:", err);
-          res.status(500).send("TikTok authentication failed. See server logs.");
+          res
+            .status(500)
+            .send("TikTok authentication failed. See server logs.");
         }
       })().catch(console.error);
     });

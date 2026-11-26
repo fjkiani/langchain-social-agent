@@ -1,9 +1,9 @@
 import "dotenv/config";
 import { createLLMAdapter } from "../src/config/llm-adapter.js";
-import { 
-  RELEVANCY_SCHEMA, 
+import {
+  RELEVANCY_SCHEMA,
   VERIFY_COMPANY_RELEVANT_CONTENT_PROMPT,
-  verifyGeneralContentIsRelevant 
+  verifyGeneralContentIsRelevant,
 } from "../src/agents/shared/nodes/verify-general.js";
 
 // Add a check for API key
@@ -24,14 +24,14 @@ async function testVerification() {
     The new feature allows developers to create sophisticated AI agents using LangChain's
     powerful orchestration capabilities. This integration demonstrates LangChain's commitment
     to advancing the field of AI development.`;
-  
+
   // Test content that should not be relevant
   const irrelevantContent = `10 best recipes for chocolate chip cookies.
     Learn how to make the perfect chocolate chip cookies with these tried and tested recipes.
     Includes tips for chewy, crispy, and cake-like variations.`;
 
   try {
-    const model = createLLMAdapter()  // Will use Gemini by default
+    const model = createLLMAdapter() // Will use Gemini by default
       .withStructuredOutput(RELEVANCY_SCHEMA, {
         name: "relevancy",
       });
@@ -63,10 +63,9 @@ async function testVerification() {
       },
     ]);
     console.log("Result:", irrelevantResult);
-
   } catch (error) {
     console.error("Error:", error);
   }
 }
 
-testVerification().catch(console.error); 
+testVerification().catch(console.error);

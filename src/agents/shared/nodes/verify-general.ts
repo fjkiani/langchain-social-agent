@@ -69,11 +69,15 @@ export async function getUrlContents(url: string): Promise<UrlContents> {
   throw new Error(`Failed to fetch content from ${url}.`);
 }
 
-export async function verifyGeneralContentIsRelevant(content: string): Promise<boolean> {
-  const relevancyModel = createLLMAdapter()
-    .withStructuredOutput(RELEVANCY_SCHEMA, {
+export async function verifyGeneralContentIsRelevant(
+  content: string,
+): Promise<boolean> {
+  const relevancyModel = createLLMAdapter().withStructuredOutput(
+    RELEVANCY_SCHEMA,
+    {
       name: "relevancy",
-    });
+    },
+  );
 
   const response = await relevancyModel
     .withConfig({

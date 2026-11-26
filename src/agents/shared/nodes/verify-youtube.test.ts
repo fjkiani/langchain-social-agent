@@ -1,4 +1,4 @@
-import { jest } from '@jest/globals';
+import { jest } from "@jest/globals";
 import { verifyYouTubeContentIsRelevant } from "./verify-youtube.js";
 import { createLLMAdapter, LLMResponse } from "../../../config/llm-adapter.js";
 
@@ -12,20 +12,23 @@ type MockedLLMAdapter = {
 
 // Mock the LLM adapter
 jest.mock("../../../config/llm-adapter.js", () => ({
-  createLLMAdapter: jest.fn(() => ({
-    withStructuredOutput: jest.fn().mockReturnThis(),
-    withConfig: jest.fn().mockReturnThis(),
-    invoke: jest.fn().mockResolvedValue({
-      content: `{
+  createLLMAdapter: jest.fn(
+    () =>
+      ({
+        withStructuredOutput: jest.fn().mockReturnThis(),
+        withConfig: jest.fn().mockReturnThis(),
+        invoke: jest.fn().mockResolvedValue({
+          content: `{
         "reasoning": "This video demonstrates LangChain usage",
         "relevant": true
       }`,
-      parsed: {
-        reasoning: "This video demonstrates LangChain usage",
-        relevant: true
-      }
-    } as RelevancyResponse)
-  } satisfies MockedLLMAdapter))
+          parsed: {
+            reasoning: "This video demonstrates LangChain usage",
+            relevant: true,
+          },
+        } as RelevancyResponse),
+      }) satisfies MockedLLMAdapter,
+  ),
 }));
 
 describe("verifyYouTubeContentIsRelevant", () => {
@@ -35,7 +38,7 @@ describe("verifyYouTubeContentIsRelevant", () => {
 
   it("should handle parsed response correctly", async () => {
     const result = await verifyYouTubeContentIsRelevant(
-      "Test video about LangChain"
+      "Test video about LangChain",
     );
 
     expect(result).toBe(true);
@@ -59,12 +62,12 @@ describe("verifyYouTubeContentIsRelevant", () => {
       content: "test response",
       parsed: {
         reasoning: "not relevant",
-        relevant: false
-      }
+        relevant: false,
+      },
     });
 
     const result = await verifyYouTubeContentIsRelevant(
-      "Unrelated video content"
+      "Unrelated video content",
     );
 
     expect(result).toBe(false);
@@ -78,10 +81,8 @@ describe("verifyYouTubeContentIsRelevant", () => {
       // No parsed data
     });
 
-    const result = await verifyYouTubeContentIsRelevant(
-      "Test content"
-    );
+    const result = await verifyYouTubeContentIsRelevant("Test content");
 
     expect(result).toBe(false); // Should default to false
   });
-}); 
+});

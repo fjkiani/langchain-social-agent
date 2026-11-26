@@ -83,8 +83,7 @@ export class TikTokClient {
     clientKey?: string;
     clientSecret?: string;
   }) {
-    const accessToken =
-      input?.accessToken || process.env.TIKTOK_ACCESS_TOKEN;
+    const accessToken = input?.accessToken || process.env.TIKTOK_ACCESS_TOKEN;
     const openId = input?.openId || process.env.TIKTOK_OPEN_ID;
 
     if (!accessToken) {
@@ -258,11 +257,7 @@ export class TikTokClient {
 
   private getPrivacyLevel(preferred?: string): string {
     // Unaffected clients are limited to private viewing until TikTok audits the app.
-    return (
-      preferred ||
-      process.env.TIKTOK_PRIVACY_LEVEL ||
-      "SELF_ONLY"
-    );
+    return preferred || process.env.TIKTOK_PRIVACY_LEVEL || "SELF_ONLY";
   }
 
   private truncate(text: string, maxChars: number): string {
@@ -337,10 +332,7 @@ export class TikTokClient {
     const payload = {
       post_info: {
         title: this.truncate(request.title, 90),
-        description: this.truncate(
-          request.description ?? request.title,
-          4000,
-        ),
+        description: this.truncate(request.description ?? request.title, 4000),
         disable_comment: request.disableComment ?? false,
         privacy_level: privacyLevel,
         auto_add_music: request.autoAddMusic ?? true,

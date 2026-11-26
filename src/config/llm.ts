@@ -18,28 +18,36 @@ function getClient(): GoogleGenerativeAI {
   return _genAI;
 }
 
-export const geminiPro = new Proxy({} as GenerativeModel, {
-  get(_target, prop, receiver) {
-    if (!_geminiPro) {
-      _geminiPro = getClient().getGenerativeModel({
-        model: "gemini-pro",
-        generationConfig: { temperature: 0 },
-      });
-    }
-    const value = Reflect.get(_geminiPro as object, prop, receiver);
-    return typeof value === "function" ? value.bind(_geminiPro) : value;
-  },
-});
+function getGeminiPro(): GenerativeModel {
+  if (!_geminiPro) {
+    _geminiPro = getClient().getGenerativeModel({
+      model: "gemini-pro",
+      generationConfig: { temperature: 0 },
+    });
+  }
+  return _geminiPro;
+}
 
-export const geminiProVision = new Proxy({} as GenerativeModel, {
-  get(_target, prop, receiver) {
-    if (!_geminiProVision) {
-      _geminiProVision = getClient().getGenerativeModel({
-        model: "gemini-pro-vision",
-        generationConfig: { temperature: 0 },
-      });
-    }
-    const value = Reflect.get(_geminiProVision as object, prop, receiver);
-    return typeof value === "function" ? value.bind(_geminiProVision) : value;
-  },
-});
+function getGeminiProVision(): GenerativeModel {
+  if (!_geminiProVision) {
+    _geminiProVision = getClient().getGenerativeModel({
+      model: "gemini-pro-vision",
+      generationConfig: { temperature: 0 },
+    });
+  }
+  return _geminiProVision;
+}
+
+/**
+ * Lazy Gemini handles. Tests can replace `generateContent` on these objects
+ * via `jest.mock("./llm.js")` without requiring GOOGLE_API_KEY at import time.
+ */
+export const geminiPro = {
+  generateContent: (...args: Parameters<GenerativeModel["generateContent"]>) =>
+    getGeminiPro().generateContent(...args),
+} as Pick<GenerativeModel, "generateContent">;
+
+export const geminiProVision = {
+  generateContent: (...args: Parameters<GenerativeModel["generateContent"]>) =>
+    getGeminiProVision().generateContent(...args),
+} as Pick<GenerativeModel, "generateContent">;

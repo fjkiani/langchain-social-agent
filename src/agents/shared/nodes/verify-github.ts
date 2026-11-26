@@ -139,10 +139,12 @@ export async function verifyGitHubContentIsRelevant({
   fileType,
   dependencyFiles,
 }: VerifyGitHubContentParams): Promise<boolean> {
-  const relevancyModel = createLLMAdapter()
-    .withStructuredOutput(RELEVANCY_SCHEMA, {
+  const relevancyModel = createLLMAdapter().withStructuredOutput(
+    RELEVANCY_SCHEMA,
+    {
       name: "relevancy",
-    });
+    },
+  );
 
   let dependenciesPrompt = "";
   if (dependencyFiles) {

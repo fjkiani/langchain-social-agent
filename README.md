@@ -305,8 +305,7 @@ Arcade does **not** currently provide a TikTok auth provider or toolkit. TikTok 
 7. Run `yarn start:auth`, open [http://localhost:3000](http://localhost:3000), and click **Login with TikTok**.
 8. Copy `access_token`, `refresh_token`, and `open_id` from the terminal into `TIKTOK_ACCESS_TOKEN`, `TIKTOK_REFRESH_TOKEN`, and `TIKTOK_OPEN_ID`.
 
-> [!NOTE]
-> `upload_post` posts to TikTok only when these credentials are set. TikTok requires media — text-only mode skips TikTok. Photo posts use `PULL_FROM_URL` with the generated image URL.
+> [!NOTE] > `upload_post` posts to TikTok only when these credentials are set. TikTok requires media — text-only mode skips TikTok. Photo posts use `PULL_FROM_URL` with the generated image URL.
 
 ### Setup Supabase
 

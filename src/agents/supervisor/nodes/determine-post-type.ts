@@ -67,10 +67,9 @@ Please take your time, and identify the best type of post to generate for these 
 export async function determinePostType(
   state: SupervisorState,
 ): Promise<Partial<SupervisorState>> {
-  const model = createLLMAdapter()
-    .withStructuredOutput(postTypeSchema, {
-      name: "postType",
-    });
+  const model = createLLMAdapter().withStructuredOutput(postTypeSchema, {
+    name: "postType",
+  });
 
   const reportAndPostType: {
     reports: string[];

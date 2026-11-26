@@ -172,10 +172,12 @@ export async function generateThreadPosts(
       .replace("{BODY_POSTS}", formatBodyPostsForPrompt(bodyPosts))
       .replace("{THREAD_PLAN}", state.threadPlan);
 
-    const bodyPost = await model.invoke([{
-      role: "user",
-      content: formattedFollowingPostPrompt
-    }]);
+    const bodyPost = await model.invoke([
+      {
+        role: "user",
+        content: formattedFollowingPostPrompt,
+      },
+    ]);
 
     bodyPosts.push(parseTweetGeneration(bodyPost.content as string));
   }
@@ -188,10 +190,12 @@ export async function generateThreadPosts(
     formatAllPostsForPrompt([firstPost, ...bodyPosts]),
   );
 
-  const finalPostGeneration = await model.invoke([{
-    role: "user",
-    content: formattedFinalPostPrompt
-  }]);
+  const finalPostGeneration = await model.invoke([
+    {
+      role: "user",
+      content: formattedFinalPostPrompt,
+    },
+  ]);
   const finalPost = parseTweetGeneration(finalPostGeneration.content as string);
 
   const allPosts = [firstPost, ...bodyPosts, finalPost];
