@@ -5,9 +5,15 @@
  * Usage:
  *   yarn tsx scripts/authorize-linkedin-org.mts
  */
+import "dotenv/config";
 import Arcade from "@arcadeai/arcadejs";
 
 async function main() {
+  if (!process.env.ARCADE_API_KEY) {
+    console.error("MISSING_SECRETS: ARCADE_API_KEY");
+    process.exit(1);
+  }
+
   const arcade = new Arcade({ apiKey: process.env.ARCADE_API_KEY });
   const id = process.env.LINKEDIN_USER_ID || "fjkiani@gmail.com";
   const orgId = process.env.LINKEDIN_ORGANIZATION_ID || "107412290";

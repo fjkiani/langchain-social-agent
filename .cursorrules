@@ -1,22 +1,37 @@
 # Scratchpad
 
 ## Current Task
-Fix LSA PR #2 CI @ 1379f55: Check formatting + Unit Tests (yarn build/tsc + jest)
+Ship/verify CrisPRO LinkedIn company-page path after Arcade OAuth approval (PR #2)
 
-## Result
-[X] yarn format / format:check green
-[X] yarn build green (tsc errors that blocked Unit Tests CI)
-[X] yarn test green (5 suites / 29 tests)
-[ ] Commit + push (or patch on 403)
+## Progress
+[X] Checkout PR #2 branch `cursor/linkedin-crispro-org-0411`
+[X] Confirm scripts: authorize-linkedin-org, post-crispro-org, resolve-crispro-org
+[X] Resolve public Hygraph glassbox-ai video/mp4 (no NotebookLM URL)
+[X] Add dotenv + DRY_RUN + resolve-hygraph-video helper
+[!] Re-run authorize → blocked: missing ARCADE_API_KEY (and LINKEDIN_USER_ID for post)
+[ ] ORG_AUTH_OK then live text + video company posts
 
-## Fixes
-- Prettier on org/video + other dirty files
-- Build: checkLanggraphPaths JSDoc, unused imports, routeResponse.parsed?.route, verifyGitHubWrapper args, exclude *.test.ts from tsc
-- Tests: ESM unstable_mockModule for verify-*, spy geminiPro in llm-adapter.test, JEST_WORKER_ID key fallback
+## Video URL (verified HEAD content-type video/mp4)
+VIDEO_URL=https://us-west-2.graphassets.com/cm65gc2pl00vr08gs2em34vmw/cmkrjbuftdycb07lpstjklcss
+
+## Missing secrets (names only)
+- ARCADE_API_KEY (required)
+- LINKEDIN_USER_ID (required for post; authorize defaults to fjkiani@gmail.com)
+- HYGRAPH_TOKEN / GRAPHCMS_TOKEN / HYGRAPH_ENDPOINT (optional; public graphassets fallback works)
+
+## Runnable after secrets
+```
+yarn tsx scripts/authorize-linkedin-org.mts
+DRY_RUN=1 yarn tsx scripts/post-crispro-org.mts
+yarn tsx scripts/post-crispro-org.mts
+VIDEO_URL=https://us-west-2.graphassets.com/cm65gc2pl00vr08gs2em34vmw/cmkrjbuftdycb07lpstjklcss yarn tsx scripts/post-crispro-org.mts
+```
 
 ## Lessons
 - LinkedIn vanity lookup `organizations?q=vanityName&vanityName=crispro` works with member token and returns numeric id
 - Org UGC posts need `w_organization_social`; member-only Arcade token → HTTP 403
+- Do not use NotebookLM googleusercontent URLs for LinkedIn video — use Hygraph graphassets mp4
+- CrisPRO org scripts must `import "dotenv/config"` like other scripts
 - LangGraph host=localhost is often IPv6-only — clients must use `localhost` not `127.0.0.1`
 - Do not treat WPL_AP1 cookies as API access tokens
 - Unit Tests CI runs `yarn build` before jest; pre-existing tsc errors on main fail every PR

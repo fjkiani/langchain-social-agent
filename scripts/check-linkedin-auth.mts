@@ -1,8 +1,13 @@
+import "dotenv/config";
 import Arcade from "@arcadeai/arcadejs";
 import { LinkedInClient } from "../src/clients/linkedin.js";
 import fs from "fs";
 
 async function main() {
+  if (!process.env.ARCADE_API_KEY) {
+    console.error("MISSING_SECRETS: ARCADE_API_KEY");
+    process.exit(1);
+  }
   const arcade = new Arcade({ apiKey: process.env.ARCADE_API_KEY });
   const id = process.env.LINKEDIN_USER_ID || "fjkiani@gmail.com";
   const authRes = await arcade.auth.start(id, "linkedin", {

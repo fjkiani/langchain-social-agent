@@ -1,3 +1,4 @@
+import "dotenv/config";
 import Arcade from "@arcadeai/arcadejs";
 
 async function probeOrgs(token: string, label: string) {

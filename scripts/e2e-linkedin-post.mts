@@ -1,8 +1,12 @@
+import "dotenv/config";
 import { LinkedInClient } from "../src/clients/linkedin.js";
 
 async function main() {
+  if (!process.env.ARCADE_API_KEY) {
+    throw new Error("MISSING_SECRETS: ARCADE_API_KEY");
+  }
   const userId = process.env.LINKEDIN_USER_ID;
-  if (!userId) throw new Error("LINKEDIN_USER_ID missing");
+  if (!userId) throw new Error("MISSING_SECRETS: LINKEDIN_USER_ID");
 
   const client = await LinkedInClient.fromArcade(userId, {
     postToOrganization: false,
