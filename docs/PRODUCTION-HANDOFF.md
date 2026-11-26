@@ -14,27 +14,27 @@ Ownership split: **this doc** = LangGraph graphs, Arcade/OAuth, platform clients
 
 ### Graphs (`langgraph.json`)
 
-| Graph id | Entry | Role |
-|----------|-------|------|
-| `ingest_data` | `src/agents/ingest-data/ingest-data-graph.ts` | Slack/content ingest |
-| `generate_post` | `src/agents/generate-post/generate-post-graph.ts` | URL → report → post → HITL → schedule |
-| `upload_post` | `src/agents/upload-post/index.ts` | Immediate Twitter + LinkedIn (+ TikTok on PR #1) |
-| `reflection` | `src/agents/reflection/index.ts` | Reflections store |
-| `generate_thread` | `src/agents/generate-thread/index.ts` | Thread posts + HITL |
-| `curate_data` | `src/agents/curate-data/index.ts` | Source curation |
-| `verify_reddit_post` / `verify_tweet` | respective graphs | Relevance filters |
-| `supervisor` | `src/agents/supervisor/supervisor-graph.ts` | Curate → reports → post type → generate |
-| `generate_report` | `src/agents/generate-report/index.ts` | Report generation |
+| Graph id                              | Entry                                             | Role                                             |
+| ------------------------------------- | ------------------------------------------------- | ------------------------------------------------ |
+| `ingest_data`                         | `src/agents/ingest-data/ingest-data-graph.ts`     | Slack/content ingest                             |
+| `generate_post`                       | `src/agents/generate-post/generate-post-graph.ts` | URL → report → post → HITL → schedule            |
+| `upload_post`                         | `src/agents/upload-post/index.ts`                 | Immediate Twitter + LinkedIn (+ TikTok on PR #1) |
+| `reflection`                          | `src/agents/reflection/index.ts`                  | Reflections store                                |
+| `generate_thread`                     | `src/agents/generate-thread/index.ts`             | Thread posts + HITL                              |
+| `curate_data`                         | `src/agents/curate-data/index.ts`                 | Source curation                                  |
+| `verify_reddit_post` / `verify_tweet` | respective graphs                                 | Relevance filters                                |
+| `supervisor`                          | `src/agents/supervisor/supervisor-graph.ts`       | Curate → reports → post type → generate          |
+| `generate_report`                     | `src/agents/generate-report/index.ts`             | Report generation                                |
 
 ### Runtime
 
-| Item | Value |
-|------|-------|
-| Dev server | `yarn langgraph:in_mem:up` → `@langchain/langgraph-cli dev --port 54367` |
-| Persistent local | `yarn langgraph:up` → `up --watch --port 54367` |
-| Auth helper | `yarn start:auth` → `src/clients/auth-server.ts` (default Express `:3000`) |
-| Env file | `.env` (from `.env.full.example` / `.env.quickstart.example`) |
-| Node | `>=18` (langgraph.json pins `node_version: 20`) |
+| Item             | Value                                                                      |
+| ---------------- | -------------------------------------------------------------------------- |
+| Dev server       | `yarn langgraph:in_mem:up` → `@langchain/langgraph-cli dev --port 54367`   |
+| Persistent local | `yarn langgraph:up` → `up --watch --port 54367`                            |
+| Auth helper      | `yarn start:auth` → `src/clients/auth-server.ts` (default Express `:3000`) |
+| Env file         | `.env` (from `.env.full.example` / `.env.quickstart.example`)              |
+| Node             | `>=18` (langgraph.json pins `node_version: 20`)                            |
 
 ### LinkedIn client (`src/clients/linkedin.ts`)
 
@@ -48,45 +48,45 @@ Ownership split: **this doc** = LangGraph graphs, Arcade/OAuth, platform clients
 
 ### Verified live (2026-11-26)
 
-| Type | URN | Notes |
-|------|-----|-------|
-| Text org | `urn:li:share:7531543177888116736` | `scripts/post-crispro-org.mts` |
+| Type      | URN                                  | Notes                                           |
+| --------- | ------------------------------------ | ----------------------------------------------- |
+| Text org  | `urn:li:share:7531543177888116736`   | `scripts/post-crispro-org.mts`                  |
 | Video org | `urn:li:ugcPost:7531543923190833152` | Hygraph graphassets mp4 `Reasoning_Biology.mp4` |
-| Auth | `ORG_AUTH_OK` | After fresh Arcade authorize with org scopes |
+| Auth      | `ORG_AUTH_OK`                        | After fresh Arcade authorize with org scopes    |
 
 ### What does not work on this branch
 
-| Item | Reality |
-|------|---------|
-| Instagram | **No code** — no client, no env, no graph node. |
-| TikTok on `linkedin-crispro-org-0411` | **Absent** — lives on PR #1 only; merge/rebase required. |
-| TikTok OAuth | Often pending; unaudited apps forced `TIKTOK_PRIVACY_LEVEL=SELF_ONLY`; media domain must be TikTok-verified. |
-| NotebookLM googleusercontent URLs | Explicitly unsupported for video fetch. |
-| Asset status GET | Returns **400 Invalid asset id** for digitalmediaAsset URNs; client logs and proceeds; posts still succeed. |
-| `schedulePost` API URL | Hardcodes `http://localhost:${process.env.PORT}` in `src/agents/generate-post/nodes/schedule-post/index.ts` — breaks when LangGraph is not that host/port. |
-| `upload_post` error model | Catches Twitter/LinkedIn errors, Slack-notifies, returns `{}` — callers (bridge) may see “success” run with failed destination. |
+| Item                                  | Reality                                                                                                                                                    |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Instagram                             | **No code** — no client, no env, no graph node.                                                                                                            |
+| TikTok on `linkedin-crispro-org-0411` | **Absent** — lives on PR #1 only; merge/rebase required.                                                                                                   |
+| TikTok OAuth                          | Often pending; unaudited apps forced `TIKTOK_PRIVACY_LEVEL=SELF_ONLY`; media domain must be TikTok-verified.                                               |
+| NotebookLM googleusercontent URLs     | Explicitly unsupported for video fetch.                                                                                                                    |
+| Asset status GET                      | Returns **400 Invalid asset id** for digitalmediaAsset URNs; client logs and proceeds; posts still succeed.                                                |
+| `schedulePost` API URL                | Hardcodes `http://localhost:${process.env.PORT}` in `src/agents/generate-post/nodes/schedule-post/index.ts` — breaks when LangGraph is not that host/port. |
+| `upload_post` error model             | Catches Twitter/LinkedIn errors, Slack-notifies, returns `{}` — callers (bridge) may see “success” run with failed destination.                            |
 
 ---
 
 ## 2. Brittleness matrix
 
-| Area | Symptom | Root cause | Fix | Pri |
-|------|---------|------------|-----|-----|
-| Arcade stale auth URLs | `flow_not_found` in browser | Expired single-use flow id | Re-run `scripts/authorize-linkedin-org.mts`; never reuse URL | P0 |
-| Org vs member tokens | 403 on company page | Token without `w_organization_social` | Authorize with org scopes; confirm admin of 107412290 | P0 |
-| Dual LangGraph / `.env` drift | Intermittent auth | Two processes or unsynced env | One CLI; restart after auth; never copy tokens into bridge | P0 |
-| LangGraph localhost-only publish | Bridge 503 in Cursor publish | `LANGGRAPH_API_URL=http://localhost:54367` | Host LangGraph Cloud/self-host; update publish secret | P0 |
-| schedule-post localhost | Scheduled runs never fire remotely | `Client({ apiUrl: http://localhost:${PORT} })` | Use `process.env.LANGGRAPH_API_URL` (or SDK default) | P0 |
-| LinkedIn asset poll 400 | Noise / false failure perception | Wrong/legacy assets GET encoding | Keep proceed-on-timeout; evaluate LinkedIn Videos API / correct status resource | P1 |
-| No public lesson mp4 | Video path unused for classroom content | Content pipeline stores YouTube in `videoUrl` | Hygraph `videoFile` CDN; `scripts/resolve-hygraph-video.mts` | P0 |
-| upload_post swallows errors | Bridge shows ok while LinkedIn failed | try/catch without rethrow | Propagate per-platform status in state annotation | P0 |
-| Twitter always attempted | Twitter errors on every LinkedIn-only post | `uploadPost` always enters Twitter block | Feature flag `ENABLE_TWITTER_UPLOAD` / platforms allowlist | P1 |
-| HITL bypass via bridge | Unreviewed posts go live | Bridge → `upload_post` direct | Route production through `generate_post` interrupt or bridge approval | P1 |
-| Secrets | Risk of committing `.env` | Local dotenv | Keep gitignored; use `.env.full.example` names only | P0 |
-| Rate limits | 429 / intermittent fail | Platform quotas | Scheduler spacing; backoff; Slack alert | P2 |
-| CI format/build | PR checks red overlapping main Gemini debt | Pre-existing LLM adapter migration | Isolate PR files or finish Gemini response.parsed migration | P1 |
-| fahadkiani Vercel | Dead-end hosting | Wrong repo for bridge | Ignore; zeta-tech canonical | P2 |
-| TikTok branch divergence | CrisPRO video on one branch, TikTok on another | Parallel PRs | Rebase/merge #1 into main then #2 (or reverse) carefully | P1 |
+| Area                             | Symptom                                        | Root cause                                     | Fix                                                                             | Pri |
+| -------------------------------- | ---------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------- | --- |
+| Arcade stale auth URLs           | `flow_not_found` in browser                    | Expired single-use flow id                     | Re-run `scripts/authorize-linkedin-org.mts`; never reuse URL                    | P0  |
+| Org vs member tokens             | 403 on company page                            | Token without `w_organization_social`          | Authorize with org scopes; confirm admin of 107412290                           | P0  |
+| Dual LangGraph / `.env` drift    | Intermittent auth                              | Two processes or unsynced env                  | One CLI; restart after auth; never copy tokens into bridge                      | P0  |
+| LangGraph localhost-only publish | Bridge 503 in Cursor publish                   | `LANGGRAPH_API_URL=http://localhost:54367`     | Host LangGraph Cloud/self-host; update publish secret                           | P0  |
+| schedule-post localhost          | Scheduled runs never fire remotely             | `Client({ apiUrl: http://localhost:${PORT} })` | Use `process.env.LANGGRAPH_API_URL` (or SDK default)                            | P0  |
+| LinkedIn asset poll 400          | Noise / false failure perception               | Wrong/legacy assets GET encoding               | Keep proceed-on-timeout; evaluate LinkedIn Videos API / correct status resource | P1  |
+| No public lesson mp4             | Video path unused for classroom content        | Content pipeline stores YouTube in `videoUrl`  | Hygraph `videoFile` CDN; `scripts/resolve-hygraph-video.mts`                    | P0  |
+| upload_post swallows errors      | Bridge shows ok while LinkedIn failed          | try/catch without rethrow                      | Propagate per-platform status in state annotation                               | P0  |
+| Twitter always attempted         | Twitter errors on every LinkedIn-only post     | `uploadPost` always enters Twitter block       | Feature flag `ENABLE_TWITTER_UPLOAD` / platforms allowlist                      | P1  |
+| HITL bypass via bridge           | Unreviewed posts go live                       | Bridge → `upload_post` direct                  | Route production through `generate_post` interrupt or bridge approval           | P1  |
+| Secrets                          | Risk of committing `.env`                      | Local dotenv                                   | Keep gitignored; use `.env.full.example` names only                             | P0  |
+| Rate limits                      | 429 / intermittent fail                        | Platform quotas                                | Scheduler spacing; backoff; Slack alert                                         | P2  |
+| CI format/build                  | PR checks red overlapping main Gemini debt     | Pre-existing LLM adapter migration             | Isolate PR files or finish Gemini response.parsed migration                     | P1  |
+| fahadkiani Vercel                | Dead-end hosting                               | Wrong repo for bridge                          | Ignore; zeta-tech canonical                                                     | P2  |
+| TikTok branch divergence         | CrisPRO video on one branch, TikTok on another | Parallel PRs                                   | Rebase/merge #1 into main then #2 (or reverse) carefully                        | P1  |
 
 ---
 
@@ -136,15 +136,15 @@ Existing supervisor (`src/agents/supervisor/supervisor-graph.ts`):
 
 **Target specialized agents** (new graphs or supervisor nodes):
 
-| Agent | Graph / node home | Inputs | Outputs | Tools | Human gate |
-|-------|-------------------|--------|---------|-------|------------|
-| Supervisor | existing `supervisor` | Cron / Slack / manual | Fan-out to specialists | curate, report, generate | Inbox on generate_post |
-| GTM Strategist | **new** `gtm_strategist` | Hygraph lesson inventory, KPIs | Calendar JSON | Hygraph GraphQL (`HYGRAPH_ENDPOINT` + token), optional FireCrawl | Accept calendar |
-| Content Curator | `generate_post` / `generate_report` | URL or lesson transcript | `post`, `image`, `report` | FireCrawl, find-images, LLMs | Edit/rewrite/ignore |
-| Platform Poster | `upload_post` | `post` + `image` | Platform ids | LinkedIn/Twitter/TikTok clients | Optional final accept |
-| Compliance/Brand | **new** before schedule | Draft + brand rules | `{ ok, issues[] }` | LLM + static doctrine text | Block schedule on fail |
-| Analytics Monitor | **new** cron graph | Recent URNs | Advice + alerts | Platform analytics (UNKNOWN access), Slack | Escalation only |
-| Scheduler | `schedule-post` + `scripts/crons/*` | `scheduleDate` | Delayed `upload_post` | LangGraph SDK `afterSeconds` | P1/P2/P3 date rules in human-node |
+| Agent             | Graph / node home                   | Inputs                         | Outputs                   | Tools                                                            | Human gate                        |
+| ----------------- | ----------------------------------- | ------------------------------ | ------------------------- | ---------------------------------------------------------------- | --------------------------------- |
+| Supervisor        | existing `supervisor`               | Cron / Slack / manual          | Fan-out to specialists    | curate, report, generate                                         | Inbox on generate_post            |
+| GTM Strategist    | **new** `gtm_strategist`            | Hygraph lesson inventory, KPIs | Calendar JSON             | Hygraph GraphQL (`HYGRAPH_ENDPOINT` + token), optional FireCrawl | Accept calendar                   |
+| Content Curator   | `generate_post` / `generate_report` | URL or lesson transcript       | `post`, `image`, `report` | FireCrawl, find-images, LLMs                                     | Edit/rewrite/ignore               |
+| Platform Poster   | `upload_post`                       | `post` + `image`               | Platform ids              | LinkedIn/Twitter/TikTok clients                                  | Optional final accept             |
+| Compliance/Brand  | **new** before schedule             | Draft + brand rules            | `{ ok, issues[] }`        | LLM + static doctrine text                                       | Block schedule on fail            |
+| Analytics Monitor | **new** cron graph                  | Recent URNs                    | Advice + alerts           | Platform analytics (UNKNOWN access), Slack                       | Escalation only                   |
+| Scheduler         | `schedule-post` + `scripts/crons/*` | `scheduleDate`                 | Delayed `upload_post`     | LangGraph SDK `afterSeconds`                                     | P1/P2/P3 date rules in human-node |
 
 ---
 
@@ -179,35 +179,35 @@ src/agents/gtm-strategist/
 
 ### LinkedIn (member + org) — **production-proven for CrisPRO**
 
-| Path | Files |
-|------|-------|
-| Client | `src/clients/linkedin.ts` |
-| Upload routing | `src/agents/upload-post/index.ts` (video MIME / extension → `createVideoPost`) |
-| Auth interrupt | `src/agents/generate-post/nodes/auth-socials.ts` + `src/agents/shared/auth/linkedin.js` |
-| Scripts | `scripts/authorize-linkedin-org.mts`, `post-crispro-org.mts`, `resolve-crispro-org.mts`, `check-linkedin-auth.mts`, `e2e-linkedin-post.mts` |
-| Constants | `src/agents/generate-post/constants.ts` → `POST_TO_LINKEDIN_ORGANIZATION`, `LINKEDIN_ORGANIZATION_ID` |
+| Path           | Files                                                                                                                                       |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Client         | `src/clients/linkedin.ts`                                                                                                                   |
+| Upload routing | `src/agents/upload-post/index.ts` (video MIME / extension → `createVideoPost`)                                                              |
+| Auth interrupt | `src/agents/generate-post/nodes/auth-socials.ts` + `src/agents/shared/auth/linkedin.js`                                                     |
+| Scripts        | `scripts/authorize-linkedin-org.mts`, `post-crispro-org.mts`, `resolve-crispro-org.mts`, `check-linkedin-auth.mts`, `e2e-linkedin-post.mts` |
+| Constants      | `src/agents/generate-post/constants.ts` → `POST_TO_LINKEDIN_ORGANIZATION`, `LINKEDIN_ORGANIZATION_ID`                                       |
 
 Media: public HTTPS URL fetched server-side. Org posts need company admin + org scopes.
 
 ### Twitter/X — **implemented, env-dependent**
 
-| Mode | Env |
-|------|-----|
-| Arcade | `USE_ARCADE_AUTH=true`, `TWITTER_USER_ID`, optional token pair |
-| API only | `USE_TWITTER_API_ONLY=true` + Twitter developer keys |
+| Mode     | Env                                                            |
+| -------- | -------------------------------------------------------------- |
+| Arcade   | `USE_ARCADE_AUTH=true`, `TWITTER_USER_ID`, optional token pair |
+| API only | `USE_TWITTER_API_ONLY=true` + Twitter developer keys           |
 
 Client: `src/clients/twitter/client.ts`. Always invoked inside `upload_post` today.
 
 ### TikTok — **code on PR #1, not on CrisPRO branch**
 
-| Piece | Path (on `cursor/add-tiktok-0411`) |
-|-------|-----------------------------------|
-| Client | `src/clients/tiktok.ts` — Login Kit + Content Posting `PULL_FROM_URL` |
-| Auth routes | `src/clients/auth-server.ts` `/auth/tiktok` |
-| Interrupt helper | `src/agents/shared/auth/tiktok.ts` |
-| Upload hook | `upload_post` when `TikTokClient.isConfigured()` |
-| Env | `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET`, `TIKTOK_REDIRECT_URI`, `TIKTOK_ACCESS_TOKEN`, `TIKTOK_REFRESH_TOKEN`, `TIKTOK_OPEN_ID`, `TIKTOK_PRIVACY_LEVEL` |
-| Tests | `src/clients/tests/tiktok.test.ts` |
+| Piece            | Path (on `cursor/add-tiktok-0411`)                                                                                                                          |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Client           | `src/clients/tiktok.ts` — Login Kit + Content Posting `PULL_FROM_URL`                                                                                       |
+| Auth routes      | `src/clients/auth-server.ts` `/auth/tiktok`                                                                                                                 |
+| Interrupt helper | `src/agents/shared/auth/tiktok.ts`                                                                                                                          |
+| Upload hook      | `upload_post` when `TikTokClient.isConfigured()`                                                                                                            |
+| Env              | `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET`, `TIKTOK_REDIRECT_URI`, `TIKTOK_ACCESS_TOKEN`, `TIKTOK_REFRESH_TOKEN`, `TIKTOK_OPEN_ID`, `TIKTOK_PRIVACY_LEVEL` |
+| Tests            | `src/clients/tests/tiktok.test.ts`                                                                                                                          |
 
 **Extension plan:** merge TikTok PR → add configurable `platforms` allowlist → bridge passes platforms → skip unconfigured quietly → return statuses.
 
@@ -237,13 +237,13 @@ VIDEO_URL=https://….graphassets.com/…
 
 Bridge and future portal `/social` should call:
 
-| Need | API |
-|------|-----|
-| Health | LangGraph `/assistants/search` (bridge already) |
-| Post now | `POST /threads` + `POST /threads/{id}/runs` assistant `upload_post` |
-| Schedule | `runs.create(..., { afterSeconds })` after fixing API URL |
-| HITL | Agent Inbox against `generate_post` interrupts (`src/agents/generate-post/nodes/human-node`) |
-| Auth status | Run `authorize-linkedin-org.mts` or expose thin status route (not built) |
+| Need        | API                                                                                          |
+| ----------- | -------------------------------------------------------------------------------------------- |
+| Health      | LangGraph `/assistants/search` (bridge already)                                              |
+| Post now    | `POST /threads` + `POST /threads/{id}/runs` assistant `upload_post`                          |
+| Schedule    | `runs.create(..., { afterSeconds })` after fixing API URL                                    |
+| HITL        | Agent Inbox against `generate_post` interrupts (`src/agents/generate-post/nodes/human-node`) |
+| Auth status | Run `authorize-linkedin-org.mts` or expose thin status route (not built)                     |
 
 CrisPRO vs personal: configurable `postToLinkedInOrganization` + `linkedInOrganizationId` (bridge already sends these).
 
@@ -251,29 +251,29 @@ CrisPRO vs personal: configurable `postToLinkedInOrganization` + `linkedInOrgani
 
 ## 9. LangGraph extension plan
 
-| Addition | Detail |
-|----------|--------|
-| Fix schedule client | Replace localhost `PORT` with `LANGGRAPH_API_URL` in `schedule-post/index.ts` (+ thread schedule sibling) |
-| `upload_post` state | Add `results` + `errors` annotations; optional `platforms: string[]` in config |
-| `gtm_strategist` graph | Register in `langgraph.json` |
-| `monitor_auth` cron | `scripts/crons/create-cron.ts` targeting new graph weekly |
-| `advise` node | LLM summary of failures from Slack/LangSmith — new |
-| Multi-platform fan-out | Parallel Send to platform-specific nodes instead of one try/catch blob |
-| HITL | Keep `interrupt()` in auth-socials + human-node; Agent Inbox setup in README |
-| Feature flags | Env `ENABLE_TWITTER_UPLOAD`, `ENABLE_TIKTOK_UPLOAD`, `ENABLE_INSTAGRAM_UPLOAD` |
+| Addition               | Detail                                                                                                    |
+| ---------------------- | --------------------------------------------------------------------------------------------------------- |
+| Fix schedule client    | Replace localhost `PORT` with `LANGGRAPH_API_URL` in `schedule-post/index.ts` (+ thread schedule sibling) |
+| `upload_post` state    | Add `results` + `errors` annotations; optional `platforms: string[]` in config                            |
+| `gtm_strategist` graph | Register in `langgraph.json`                                                                              |
+| `monitor_auth` cron    | `scripts/crons/create-cron.ts` targeting new graph weekly                                                 |
+| `advise` node          | LLM summary of failures from Slack/LangSmith — new                                                        |
+| Multi-platform fan-out | Parallel Send to platform-specific nodes instead of one try/catch blob                                    |
+| HITL                   | Keep `interrupt()` in auth-socials + human-node; Agent Inbox setup in README                              |
+| Feature flags          | Env `ENABLE_TWITTER_UPLOAD`, `ENABLE_TIKTOK_UPLOAD`, `ENABLE_INSTAGRAM_UPLOAD`                            |
 
 ---
 
 ## 10. Dashboard LLM assistant (tools backed by this repo)
 
-| Tool | Backing |
-|------|---------|
-| `check_linkedin_auth` | Arcade `auth.start` / authorize script |
-| `draft_from_url` | `generate_post` (with HITL) |
-| `post_to_crispro` | `upload_post` + org configurable |
-| `list_scheduled` | `yarn get:scheduled_runs` / SDK search |
-| `resolve_video` | `resolve-hygraph-video.mts` logic |
-| `metrics` | UNKNOWN — need LinkedIn Marketing API product access |
+| Tool                  | Backing                                              |
+| --------------------- | ---------------------------------------------------- |
+| `check_linkedin_auth` | Arcade `auth.start` / authorize script               |
+| `draft_from_url`      | `generate_post` (with HITL)                          |
+| `post_to_crispro`     | `upload_post` + org configurable                     |
+| `list_scheduled`      | `yarn get:scheduled_runs` / SDK search               |
+| `resolve_video`       | `resolve-hygraph-video.mts` logic                    |
+| `metrics`             | UNKNOWN — need LinkedIn Marketing API product access |
 
 Guardrails: no tool returns raw access tokens; `post_to_crispro` requires role + confirmation; dry-run flag default in staging.
 
@@ -281,30 +281,30 @@ Guardrails: no tool returns raw access tokens; `post_to_crispro` requires role +
 
 ## 11. Monitors & advising
 
-| Signal | Current | Prod |
-|--------|---------|------|
-| Upload failure | Slack message from `upload_post` | Keep + page on repeated fail |
-| Schedule created | Slack from `schedule-post` | Keep |
-| Auth pending | Manual | Cron → Slack with fresh authorize instructions (not stale URL) |
-| Engagement | None | Analytics Monitor (future) |
-| LangSmith traces | Optional | Required in prod |
+| Signal           | Current                          | Prod                                                           |
+| ---------------- | -------------------------------- | -------------------------------------------------------------- |
+| Upload failure   | Slack message from `upload_post` | Keep + page on repeated fail                                   |
+| Schedule created | Slack from `schedule-post`       | Keep                                                           |
+| Auth pending     | Manual                           | Cron → Slack with fresh authorize instructions (not stale URL) |
+| Engagement       | None                             | Analytics Monitor (future)                                     |
+| LangSmith traces | Optional                         | Required in prod                                               |
 
 ---
 
 ## 12. 90-day build plan (agent column)
 
-| Week | Agent/BE milestone |
-|------|--------------------|
-| 1 | Deploy LangGraph; fix `schedule-post` API URL; platform result state |
-| 2 | Feature flags; stop mandatory Twitter on LinkedIn-only |
-| 3 | Merge TikTok; e2e OAuth; verified domain media |
-| 4 | GTM Strategist graph v0 + Hygraph pull |
-| 5 | Compliance node + doctrine text |
-| 6 | Auth monitor cron |
-| 7 | Instagram spike go/no-go |
-| 8 | Harden asset status / Videos API |
-| 9 | Load/rate-limit policy |
-| 10–12 | Eval suite for captions; runbooks; chaos (kill Arcade) |
+| Week  | Agent/BE milestone                                                   |
+| ----- | -------------------------------------------------------------------- |
+| 1     | Deploy LangGraph; fix `schedule-post` API URL; platform result state |
+| 2     | Feature flags; stop mandatory Twitter on LinkedIn-only               |
+| 3     | Merge TikTok; e2e OAuth; verified domain media                       |
+| 4     | GTM Strategist graph v0 + Hygraph pull                               |
+| 5     | Compliance node + doctrine text                                      |
+| 6     | Auth monitor cron                                                    |
+| 7     | Instagram spike go/no-go                                             |
+| 8     | Harden asset status / Videos API                                     |
+| 9     | Load/rate-limit policy                                               |
+| 10–12 | Eval suite for captions; runbooks; chaos (kill Arcade)               |
 
 FE weeks aligned in zeta `docs/PRODUCTION-HANDOFF.md` §12.
 
@@ -352,16 +352,16 @@ LANGGRAPH_API_URL=http://localhost:54367 node \
 
 ## 14. Anti-sandbag appendix
 
-| Do not claim | Until |
-|--------------|-------|
-| Instagram supported | Client + OAuth + upload node merged |
-| TikTok live on CrisPRO branch | PR #1 merged/rebased and OAuth completed |
-| Asset READY polling reliable | Non-400 status API or confirmed alternative |
-| schedule_post works in prod | `LANGGRAPH_API_URL` used instead of localhost PORT |
-| upload_post success ⇒ LinkedIn success | State returns per-platform results |
-| YouTube/Drive URL is LinkedIn video | Never |
-| WPL cookie is API token | Never — `LINKEDIN_WPL_COOKIE` unused by client |
-| Multi-tenant SaaS ready | Per-tenant secrets + ACL (absent) |
-| “Arcade TikTok” | Arcade has no TikTok provider here — native only |
+| Do not claim                           | Until                                              |
+| -------------------------------------- | -------------------------------------------------- |
+| Instagram supported                    | Client + OAuth + upload node merged                |
+| TikTok live on CrisPRO branch          | PR #1 merged/rebased and OAuth completed           |
+| Asset READY polling reliable           | Non-400 status API or confirmed alternative        |
+| schedule_post works in prod            | `LANGGRAPH_API_URL` used instead of localhost PORT |
+| upload_post success ⇒ LinkedIn success | State returns per-platform results                 |
+| YouTube/Drive URL is LinkedIn video    | Never                                              |
+| WPL cookie is API token                | Never — `LINKEDIN_WPL_COOKIE` unused by client     |
+| Multi-tenant SaaS ready                | Per-tenant secrets + ACL (absent)                  |
+| “Arcade TikTok”                        | Arcade has no TikTok provider here — native only   |
 
 **Proof artifacts (internal to Cursor project, not git):** live text/video verify notes under the project store (`crispro-org-live-text-verify.md`, `crispro-org-video-post-result.md`).
